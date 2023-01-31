@@ -1,0 +1,7 @@
+buildscript { repositories { mavenLocal(); mavenCentral(); google(); gradlePluginPortal() } }
+plugins {
+  id("com.soywiz.kproject")
+}
+dependencies {
+  add("commonMainApi", "com.soywiz.korlibs.korge2:korge")
+}

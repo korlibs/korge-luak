@@ -1,0 +1,4 @@
+#name: deps
+dependencies:
+    - ../korge-mymodule
+
