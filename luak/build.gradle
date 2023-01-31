@@ -1,0 +1,6 @@
+buildscript { repositories { mavenLocal(); mavenCentral(); google(); gradlePluginPortal() } }
+plugins {
+  id("com.soywiz.kproject") version "0.1.2"
+}
+dependencies {
+}

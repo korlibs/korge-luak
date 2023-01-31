@@ -1,0 +1,6 @@
+name: "luak"
+plugins:
+  #- serialization
+dependencies:
+  #- "maven::common::com.soywiz.korlibs.korge2:korge"
+
