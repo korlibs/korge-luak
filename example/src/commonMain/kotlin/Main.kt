@@ -1,7 +1,7 @@
-import com.soywiz.korge.*
-import com.soywiz.korge.scene.*
-import com.soywiz.korge.ui.*
-import com.soywiz.korge.view.*
+import korlibs.korge.*
+import korlibs.korge.scene.*
+import korlibs.korge.ui.*
+import korlibs.korge.view.*
 import org.luaj.vm2.*
 import org.luaj.vm2.compiler.*
 import org.luaj.vm2.lib.*
@@ -14,7 +14,7 @@ class MainLuaScene : Scene() {
     override suspend fun SContainer.sceneMain() {
         val globals = createLuaGlobals()
 
-        val textStack = uiVerticalStack(padding = 8.0, adjustSize = false).xy(10, 10)
+        val textStack = uiVerticalStack(padding = 8f, adjustSize = false).xy(10, 10)
 
         fun luaprintln(str: String) {
             println("LUA_PRINTLN: $str")
