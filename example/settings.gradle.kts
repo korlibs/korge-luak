@@ -2,9 +2,9 @@ pluginManagement { repositories {  mavenLocal(); mavenCentral(); google(); gradl
 
 plugins {
     //id("com.soywiz.kproject.settings") version "0.0.1-SNAPSHOT"
-    id("com.soywiz.kproject.settings") version "0.1.2"
+    id("com.soywiz.kproject.settings") version "0.1.3"
 }
 
-rootProject.name = "korge-luak-example"
+rootProject.name = "${rootDir.parentFile.name}-example"
 
 kproject("./deps")
