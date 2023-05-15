@@ -91,7 +91,6 @@ abstract class WeakTableTest : TableTest() {
         override fun new_Table(n: Int, m: Int): LuaTable = WeakTable.make(true, false)
 
         @Test
-        @Ignore // @TODO: Kotlin 1.5-RC Is there a leak? origkey.get() doesn't return null after GC
         fun testWeakKeysTable() {
             val t = WeakTable.make(true, false)
 

@@ -250,18 +250,17 @@ class LuaThread : LuaValue {
 
         suspend fun lua_yield(args: Varargs): Varargs {
             //Exception().printStackTrace()
-            try {
+            //try {
                 //println("!!yield ${lua_thread.get()}")
                 this.resume = CompletableDeferred()
                 this.result = args
                 this.status = STATUS_SUSPENDED
                 yielded?.complete(Unit)
                 this.resume?.await()
-            } finally {
-                this.args = LuaValue.NONE
-                this.result = LuaValue.NONE
+            //} finally {
+                //this.args = LuaValue.NONE
                 return this.args
-            }
+            //}
 
             //try {
             //    this.result = args
