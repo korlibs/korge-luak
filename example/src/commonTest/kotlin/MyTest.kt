@@ -33,14 +33,14 @@ class MyTest {
             // language=lua
             """
             co = coroutine.create(function ()
-               for i=1,10 do
+               for i=1,4 do
                  print("co", i)
                  coroutine.yield(i, i + 1)
                end
                return "completed"
              end)
             
-            for i=1,4 do
+            for i=1,10 do
                 local code, res = coroutine.resume(co)
                 print(code, res)
             end

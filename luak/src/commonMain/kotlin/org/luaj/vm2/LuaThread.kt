@@ -198,35 +198,10 @@ class LuaThread : LuaValue {
                 t.printStackTrace()
             } finally {
                 this.status = LuaThread.STATUS_DEAD
-                (this)._notify()
-            }
-        }
-
-        private var completableDeferred: CompletableDeferred<Unit>? = null
-
-        suspend fun _notify() {
-            println("!!! NOTIFY")
-            //Exception().printStackTrace()
-            completableDeferred?.complete(Unit)
-        }
-        suspend fun _wait() {
-            completableDeferred = CompletableDeferred()
-            try {
-                println("!!! WAIT")
-                completableDeferred?.await()
-            } catch (e: TimeoutCancellationException) {
-                // Do nothing
-            } catch (e: Throwable) {
-                e.printStackTrace()
-                throw e
-            } finally {
-                println("!!! WAITED")
-                completableDeferred = null
-            }
-        }
-        suspend fun _wait(timeout: Long) {
-            withTimeout(timeout) {
-                _wait()
+                yielded?.complete(Unit)
+                resume?.complete(Unit)
+                yielded = null
+                resume = null
             }
         }
 
