@@ -62,16 +62,29 @@ class MainLuaScene : Scene() {
             
             co = coroutine.create(function ()
                for i=1,5 do
-                 print("co", i)
-                 coroutine.yield(i, i + 1)
+                 --print("co", i)
+                 coroutine.yield("co" .. i, i + 1)
                end
                return "completed"
              end)
-            
-            for i=1,12 do
-                local code, res = coroutine.resume(co)
-                print(code, res)
+             
+            function coroutine_it (co)
+              return function ()
+                    local code, res = coroutine.resume(co)
+                    if code then
+                        return res 
+                    end
+             end
             end
+    
+            for i in coroutine_it(co) do
+                print("for", i)
+            end
+            
+            --for i=1,12 do
+            --    local code, res = coroutine.resume(co)
+            --    print(code, res)
+            --end
             print("ENDED!")
 
             return res

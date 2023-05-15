@@ -597,7 +597,7 @@ class LuaClosure
                     }
 
                     Lua.OP_TFORCALL /* A C	R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));	*/ -> {
-                        v = stack[a].invoke(LuaValue.varargsOf(stack[a + 1], stack[a + 2]))
+                        v = stack[a].invokeSuspend(LuaValue.varargsOf(stack[a + 1], stack[a + 2]))
                         c = i shr 14 and 0x1ff
                         while (--c >= 0)
                             stack[a + 3 + c] = v.arg(c + 1)
