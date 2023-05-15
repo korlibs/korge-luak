@@ -305,7 +305,7 @@ open class Globals(
      * @param args  Arguments to supply as return values in the resume function of the resuming thread.
      * @return Values supplied as arguments to the resume() call that reactivates this thread.
      */
-    fun yield(args: Varargs): Varargs {
+    suspend fun yield(args: Varargs): Varargs {
         if (running.isMainThread) throw LuaError("cannot yield main thread")
         val s = running.state
         return s.lua_yield(args)

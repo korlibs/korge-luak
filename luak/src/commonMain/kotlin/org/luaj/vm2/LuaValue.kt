@@ -1510,6 +1510,35 @@ abstract class LuaValue : Varargs() {
         return callmt().call(this)
     }
 
+    open suspend fun callSuspend(): LuaValue {
+        return call()
+    }
+
+    open suspend fun callSuspend(arg: LuaValue): LuaValue {
+        return call(arg)
+    }
+
+    open suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue {
+        return call(arg1, arg2)
+    }
+
+    open suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
+        return call(arg1, arg2, arg3)
+    }
+
+    suspend fun invokeSuspend(args: Array<LuaValue>): Varargs {
+        return invokeSuspend(varargsOf(args))
+    }
+
+    open suspend fun invokeSuspend(args: Varargs): Varargs {
+        //return callmt().invokeSuspend(this, args)
+        return invoke(args)
+    }
+
+    suspend fun invokeSuspend(arg: LuaValue, varargs: Varargs): Varargs {
+        return invokeSuspend(varargsOf(arg, varargs))
+    }
+
     /** Call `this` with 1 argument, including metatag processing,
      * and return only the first return value.
      *

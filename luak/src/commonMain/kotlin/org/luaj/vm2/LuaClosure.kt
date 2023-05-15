@@ -111,6 +111,27 @@ class LuaClosure
     override fun getmetatable(): LuaValue? = LuaFunction.s_metatable
     override fun tojstring(): String = "function: $p"
 
+    override suspend fun callSuspend(): LuaValue {
+        val stack = arrayOfNulls<LuaValue>(p.maxstacksize) as Array<LuaValue>
+        for (i in 0 until p.numparams) stack[i] = LuaValue.NIL
+        return executeSuspend(stack, LuaValue.NONE).arg1()
+    }
+
+    override suspend fun callSuspend(arg: LuaValue): LuaValue {
+        //return super.callSuspend(arg)
+        TODO()
+    }
+
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue {
+        //return super.callSuspend(arg1, arg2)
+        TODO()
+    }
+
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
+        //return super.callSuspend(arg1, arg2, arg3)
+        TODO()
+    }
+
     override fun call(): LuaValue {
         val stack = arrayOfNulls<LuaValue>(p.maxstacksize) as Array<LuaValue>
         for (i in 0 until p.numparams) stack[i] = LuaValue.NIL
@@ -179,6 +200,12 @@ class LuaClosure
     }
 
     protected fun execute(stack: Array<LuaValue>, varargs: Varargs): Varargs {
+        return runBlockingNoSuspensions {
+            executeSuspend(stack, varargs)
+        }
+    }
+
+    protected suspend fun executeSuspend(stack: Array<LuaValue>, varargs: Varargs): Varargs {
         // loop through instructions
         var i: Int
         var a: Int
@@ -439,61 +466,61 @@ class LuaClosure
 
                     Lua.OP_CALL /*	A B C	R(A), ... ,R(A+C-2):= R(A)(R(A+1), ... ,R(A+B-1)) */ -> when (i and (Lua.MASK_B or Lua.MASK_C)) {
                         1 shl Lua.POS_B or (0 shl Lua.POS_C) -> {
-                            v = stack[a].invoke(LuaValue.NONE)
+                            v = stack[a].invokeSuspend(LuaValue.NONE)
                             top = a + v.narg()
                             ++pc
                             continue@loop
                         }
                         2 shl Lua.POS_B or (0 shl Lua.POS_C) -> {
-                            v = stack[a].invoke(stack[a + 1])
+                            v = stack[a].invokeSuspend(stack[a + 1])
                             top = a + v.narg()
                             ++pc
                             continue@loop
                         }
                         1 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
-                            stack[a].call()
+                            stack[a].callSuspend()
                             ++pc
                             continue@loop
                         }
                         2 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
-                            stack[a].call(stack[a + 1])
+                            stack[a].callSuspend(stack[a + 1])
                             ++pc
                             continue@loop
                         }
                         3 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
-                            stack[a].call(stack[a + 1], stack[a + 2])
+                            stack[a].callSuspend(stack[a + 1], stack[a + 2])
                             ++pc
                             continue@loop
                         }
                         4 shl Lua.POS_B or (1 shl Lua.POS_C) -> {
-                            stack[a].call(stack[a + 1], stack[a + 2], stack[a + 3])
+                            stack[a].callSuspend(stack[a + 1], stack[a + 2], stack[a + 3])
                             ++pc
                             continue@loop
                         }
                         1 shl Lua.POS_B or (2 shl Lua.POS_C) -> {
-                            stack[a] = stack[a].call()
+                            stack[a] = stack[a].callSuspend()
                             ++pc
                             continue@loop
                         }
                         2 shl Lua.POS_B or (2 shl Lua.POS_C) -> {
-                            stack[a] = stack[a].call(stack[a + 1])
+                            stack[a] = stack[a].callSuspend(stack[a + 1])
                             ++pc
                             continue@loop
                         }
                         3 shl Lua.POS_B or (2 shl Lua.POS_C) -> {
-                            stack[a] = stack[a].call(stack[a + 1], stack[a + 2])
+                            stack[a] = stack[a].callSuspend(stack[a + 1], stack[a + 2])
                             ++pc
                             continue@loop
                         }
                         4 shl Lua.POS_B or (2 shl Lua.POS_C) -> {
-                            stack[a] = stack[a].call(stack[a + 1], stack[a + 2], stack[a + 3])
+                            stack[a] = stack[a].callSuspend(stack[a + 1], stack[a + 2], stack[a + 3])
                             ++pc
                             continue@loop
                         }
                         else -> {
                             b = i.ushr(23)
                             c = i shr 14 and 0x1ff
-                            v = stack[a].invoke(
+                            v = stack[a].invokeSuspend(
                                 if (b > 0)
                                     LuaValue.varargsOf(stack, a + 1, b - 1)
                                 else

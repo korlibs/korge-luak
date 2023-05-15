@@ -140,7 +140,7 @@ class LuaThread : LuaValue {
         return s_metatable
     }
 
-    fun resume(args: Varargs): Varargs {
+    suspend fun resume(args: Varargs): Varargs {
         val s = this.state
         return if (s.status > LuaThread.STATUS_SUSPENDED) LuaValue.varargsOf(
             LuaValue.BFALSE,
@@ -181,12 +181,12 @@ class LuaThread : LuaValue {
         @kotlin.jvm.JvmField
         var status = LuaThread.STATUS_INITIAL
 
-        @Synchronized
-        fun run() {
+        //@Synchronized
+        suspend fun run() {
             try {
                 val a = this.args
                 this.args = LuaValue.NONE
-                this.result = function!!.invoke(a)
+                this.result = function!!.invokeSuspend(a)
             } catch (t: Throwable) {
                 this.error = t.message
             } finally {
@@ -199,41 +199,41 @@ class LuaThread : LuaValue {
         fun _wait() = JSystem.Object_wait(this)
         fun _wait(timeout: Long) = JSystem.Object_wait(this, timeout)
 
-        @Synchronized
-        fun lua_resume(new_thread: LuaThread, args: Varargs): Varargs {
-            val previous_thread = globals.running
-            try {
-                globals.running = new_thread
-                this.args = args
-                if (this.status == STATUS_INITIAL) {
-                    this.status = STATUS_RUNNING
-                    JSystem.StartNativeThread({ this.run() }, "Coroutine-" + ++coroutine_count)
-                } else {
-                    (this )._notify()
-                }
-                if (previous_thread != null)
-                    previous_thread.state.status = STATUS_NORMAL
-                this.status = STATUS_RUNNING
-                (this )._wait()
-                return if (this.error != null)
-                    LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(this.error!!))
-                else
-                    LuaValue.varargsOf(LuaValue.BTRUE, this.result)
-            } catch (ie: InterruptedException) {
-                throw OrphanedThread()
-            } finally {
-                this.args = LuaValue.NONE
-                this.result = LuaValue.NONE
-                this.error = null
-                globals.running = previous_thread
-                if (previous_thread != null) {
-                    previous_thread.state.status = STATUS_RUNNING
-                }
-            }
+        suspend fun lua_resume(new_thread: LuaThread, args: Varargs): Varargs {
+            TODO()
+            //val previous_thread = globals.running
+            //try {
+            //    globals.running = new_thread
+            //    this.args = args
+            //    if (this.status == STATUS_INITIAL) {
+            //        this.status = STATUS_RUNNING
+            //        JSystem.StartNativeThread({ this.run() }, "Coroutine-" + ++coroutine_count)
+            //    } else {
+            //        (this )._notify()
+            //    }
+            //    if (previous_thread != null)
+            //        previous_thread.state.status = STATUS_NORMAL
+            //    this.status = STATUS_RUNNING
+            //    (this )._wait()
+            //    return if (this.error != null)
+            //        LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(this.error!!))
+            //    else
+            //        LuaValue.varargsOf(LuaValue.BTRUE, this.result)
+            //} catch (ie: InterruptedException) {
+            //    throw OrphanedThread()
+            //} finally {
+            //    this.args = LuaValue.NONE
+            //    this.result = LuaValue.NONE
+            //    this.error = null
+            //    globals.running = previous_thread
+            //    if (previous_thread != null) {
+            //        previous_thread.state.status = STATUS_RUNNING
+            //    }
+            //}
         }
 
-        @Synchronized
-        fun lua_yield(args: Varargs): Varargs {
+        suspend fun lua_yield(args: Varargs): Varargs {
+            TODO()
             try {
                 this.result = args
                 this.status = STATUS_SUSPENDED

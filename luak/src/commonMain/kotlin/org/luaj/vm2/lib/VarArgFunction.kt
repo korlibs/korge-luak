@@ -24,6 +24,14 @@ package org.luaj.vm2.lib
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
 
+abstract class VarArgFunctionSuspend : VarArgFunction() {
+    final override fun invoke(args: Varargs): Varargs {
+        TODO("invokeSuspend expected to be called")
+    }
+
+    abstract override suspend fun invokeSuspend(args: Varargs): Varargs
+}
+
 /** Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
  *
