@@ -197,6 +197,30 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
         }
     }
 
+    suspend fun stringOrStringFunctionGeneratorToString(ld: LuaValue): String {
+        return when {
+            ld.isstring() -> {
+                ld.strvalue()!!.toString()
+            }
+            else -> {
+                val func = ld.checkfunction()!!
+                buildString {
+                    var n = 0
+                    while (true) {
+                        //println("!!loadStream: '$n'")
+                        val result = func.callSuspend(NONE)
+                        if (result.isnil()) break
+                        //println("!!loadStream: '$n' : result=$result")
+                        append(result.toString())
+                        n++
+                        //println("Load.invokeSuspend.result:: narg=${result.narg()} '$result'")
+                    }
+                    //TODO()
+                }
+            }
+        }
+    }
+
     // "load", // ( ld [, source [, mode [, env]]] ) -> chunk | nil, msg
     internal inner class Load : BaseVarArgFunction() {
         override suspend fun invokeSuspend(args: Varargs): Varargs {
@@ -207,26 +231,8 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
             val env = args.optvalue(4, globals!!)
 
             try {
-                val str = if (ld.isstring()) {
-                    ld.strvalue()!!.toString()
-                } else {
-                    val func = ld.checkfunction()!!
-                    buildString {
-                        var n = 0
-                        while (true) {
-                            //println("!!loadStream: '$n'")
-                            val result = func.callSuspend(NONE)
-                            if (result.isnil()) break
-                            //println("!!loadStream: '$n' : result=$result")
-                            append(result.toString())
-                            n++
-                            //println("Load.invokeSuspend.result:: narg=${result.narg()} '$result'")
-                        }
-                        //TODO()
-                    }
-                }
                 return loadStream(
-                    LuaString.valueOf(str).toLuaBinInput(), source, mode, env
+                    LuaString.valueOf(stringOrStringFunctionGeneratorToString(ld)).toLuaBinInput(), source, mode, env
                 )
             } catch (e: Throwable) {
                 e.printStackTrace()
@@ -235,20 +241,7 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
         }
 
         override fun invoke(args: Varargs): Varargs {
-            return runBlockingNoSuspensions {
-                invokeSuspend(args)
-            }
-            //val ld = args.arg1()
-            //args.argcheck(ld.isstring() || ld.isfunction(), 1, "ld must be string or function")
-            //val source = args.optjstring(2, if (ld.isstring()) ld.tojstring() else "=(load)")
-            //val mode = args.optjstring(3, "bt")
-            //val env = args.optvalue(4, globals!!)
-            //return loadStream(
-            //    if (ld.isstring())
-            //        ld.strvalue()!!.toLuaBinInput()
-            //    else
-            //        StringInputStream(ld.checkfunction()!!), source, mode, env
-            //)
+            return runBlockingNoSuspensions { invokeSuspend(args) }
         }
     }
 
