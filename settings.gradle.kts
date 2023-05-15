@@ -6,6 +6,7 @@ plugins {
     //id("com.soywiz.kproject.settings") version "0.2.7"
 }
 
-rootProject.name = "${rootDir.parentFile.name}-example"
+//rootProject.name = "${rootDir.parentFile.name}-example"
+rootProject.name = "${rootDir.name}-example"
 
 kproject("./deps")
