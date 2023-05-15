@@ -21,6 +21,8 @@
  */
 package org.luaj.vm2
 
+import org.luaj.vm2.internal.runBlockingNoSuspensions
+
 /**
  * Subclass of [Varargs] that represents a lua tail call
  * in a Java library function execution environment.
@@ -64,7 +66,25 @@ class TailcallVarargs : Varargs {
         return true
     }
 
+    override suspend fun evalSuspend(): Varargs {
+        while (result == null) {
+            val r = func!!.onInvokeSuspend(args!!)
+            if (r.isTailcall()) {
+                val t = r as TailcallVarargs
+                func = t.func
+                args = t.args
+            } else {
+                result = r
+                func = null
+                args = null
+            }
+        }
+        return result!!
+    }
+
     override fun eval(): Varargs {
+        return runBlockingNoSuspensions { evalSuspend() }
+        /*
         while (result == null) {
             val r = func!!.onInvoke(args!!)
             if (r.isTailcall()) {
@@ -78,6 +98,7 @@ class TailcallVarargs : Varargs {
             }
         }
         return result!!
+         */
     }
 
     override fun arg(i: Int): LuaValue {

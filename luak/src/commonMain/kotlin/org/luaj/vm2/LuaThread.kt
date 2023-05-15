@@ -22,7 +22,11 @@
 package org.luaj.vm2
 
 
+import kotlinx.coroutines.*
 import org.luaj.vm2.internal.*
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.suspendCoroutine
 import kotlin.jvm.*
 import kotlin.native.concurrent.*
 
@@ -140,12 +144,15 @@ class LuaThread : LuaValue {
         return s_metatable
     }
 
-    fun resume(args: Varargs): Varargs {
+    suspend fun resume(args: Varargs): Varargs {
         val s = this.state
-        return if (s.status > LuaThread.STATUS_SUSPENDED) LuaValue.varargsOf(
-            LuaValue.BFALSE,
-            LuaValue.valueOf("cannot resume " + (if (s.status == LuaThread.STATUS_DEAD) "dead" else "non-suspended") + " coroutine")
-        ) else s.lua_resume(this, args)
+        return when {
+            s.status > LuaThread.STATUS_SUSPENDED -> LuaValue.varargsOf(
+                LuaValue.BFALSE,
+                LuaValue.valueOf("cannot resume " + (if (s.status == LuaThread.STATUS_DEAD) "dead" else "non-suspended") + "(${s.status}) coroutine")
+            )
+            else -> s.lua_resume(this, args)
+        }
     }
 
     class State internal constructor(private val globals: Globals, lua_thread: LuaThread, val function: LuaValue?) {
@@ -181,44 +188,62 @@ class LuaThread : LuaValue {
         @kotlin.jvm.JvmField
         var status = LuaThread.STATUS_INITIAL
 
-        @Synchronized
-        fun run() {
+        //@Synchronized
+        suspend fun runSuspend() {
             try {
                 val a = this.args
                 this.args = LuaValue.NONE
-                this.result = function!!.invoke(a)
+                //println("!!!!!!!!! [1]")
+                this.result = function!!.invokeSuspend(a)
+                //println("!!!!!!!!! [2]")
             } catch (t: Throwable) {
                 this.error = t.message
+                //t.printStackTrace()
             } finally {
                 this.status = LuaThread.STATUS_DEAD
-                (this)._notify()
+                yielded?.complete(Unit)
+                resume?.complete(Unit)
+                yielded = null
+                resume = null
             }
         }
 
-        fun _notify() = JSystem.Object_notify(this)
-        fun _wait() = JSystem.Object_wait(this)
-        fun _wait(timeout: Long) = JSystem.Object_wait(this, timeout)
-
-        @Synchronized
-        fun lua_resume(new_thread: LuaThread, args: Varargs): Varargs {
+        suspend fun lua_resume(new_thread: LuaThread, args: Varargs): Varargs {
+            //Exception().printStackTrace()
             val previous_thread = globals.running
             try {
                 globals.running = new_thread
                 this.args = args
+                yielded = CompletableDeferred()
+                //println("RESUME $this")
                 if (this.status == STATUS_INITIAL) {
                     this.status = STATUS_RUNNING
-                    JSystem.StartNativeThread({ this.run() }, "Coroutine-" + ++coroutine_count)
+                    val name = "Coroutine-" + ++coroutine_count
+                    val job = CoroutineScope(coroutineContext).launch() {
+                        try {
+                            this@State.runSuspend()
+                            //println("!!!! Coroutine completed normally!")
+                        //} catch (e: Throwable) {
+                        //    e.printStackTrace()
+                        //    println("!!!! Coroutine completed! with error ${e.message}")
+                        } finally {
+                            //println("!!!! Coroutine completed! with=${this@State.result}")
+                        }
+                    }
+                    //println("### $name = $job")
                 } else {
-                    (this )._notify()
+                    resume?.complete(Unit)
                 }
-                if (previous_thread != null)
-                    previous_thread.state.status = STATUS_NORMAL
+                previous_thread?.state?.status = STATUS_NORMAL
                 this.status = STATUS_RUNNING
-                (this )._wait()
-                return if (this.error != null)
-                    LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(this.error!!))
-                else
-                    LuaValue.varargsOf(LuaValue.BTRUE, this.result)
+                //println("Waiting...")
+                yielded?.await()
+                //println("Finished waiting")
+                //println("/RESUME $this")
+                return when {
+                    this.error != null -> LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(this.error!!))
+                    else -> LuaValue.varargsOf(LuaValue.BTRUE, this.result)
+                }
             } catch (ie: InterruptedException) {
                 throw OrphanedThread()
             } finally {
@@ -226,33 +251,57 @@ class LuaThread : LuaValue {
                 this.result = LuaValue.NONE
                 this.error = null
                 globals.running = previous_thread
-                if (previous_thread != null) {
-                    previous_thread.state.status = STATUS_RUNNING
-                }
+                previous_thread?.state?.status = STATUS_RUNNING
             }
         }
 
-        @Synchronized
-        fun lua_yield(args: Varargs): Varargs {
-            try {
-                this.result = args
-                this.status = STATUS_SUSPENDED
-                (this )._notify()
-                do {
-                    (this )._wait(thread_orphan_check_interval)
-                    if (this.lua_thread.get() == null) {
-                        this.status = STATUS_DEAD
-                        throw OrphanedThread()
-                    }
-                } while (this.status == STATUS_SUSPENDED)
-                return this.args
-            } catch (ie: InterruptedException) {
-                this.status = STATUS_DEAD
-                throw OrphanedThread()
-            } finally {
-                this.args = LuaValue.NONE
-                this.result = LuaValue.NONE
-            }
+        var yielded: CompletableDeferred<Unit>? = null
+        var resume: CompletableDeferred<Unit>? = null
+
+        suspend fun lua_yield(args: Varargs): Varargs {
+            //Exception().printStackTrace()
+            //try {
+            //println("!!yield ${lua_thread.get()}")
+            //println("YIELD[1]")
+            this.resume = CompletableDeferred()
+            this.result = args
+            this.status = STATUS_SUSPENDED
+            yielded?.complete(Unit)
+            do {
+                withTimeout(globals.thread_orphan_check_interval) {
+                    resume?.await()
+                }
+                if (this.lua_thread.get() == null) {
+                    this.status = STATUS_DEAD
+                    throw OrphanedThread()
+                }
+            } while (this.status == STATUS_SUSPENDED)
+
+        //} finally {
+            //this.args = LuaValue.NONE
+            //println("YIELD[2]")
+            return this.args
+            //}
+
+            //try {
+            //    this.result = args
+            //    this.status = STATUS_SUSPENDED
+            //    (this )._notify()
+            //    do {
+            //        (this )._wait(thread_orphan_check_interval)
+            //        if (this.lua_thread.get() == null) {
+            //            this.status = STATUS_DEAD
+            //            throw OrphanedThread()
+            //        }
+            //    } while (this.status == STATUS_SUSPENDED)
+            //    return this.args
+            //} catch (ie: InterruptedException) {
+            //    this.status = STATUS_DEAD
+            //    throw OrphanedThread()
+            //} finally {
+            //    this.args = LuaValue.NONE
+            //    this.result = LuaValue.NONE
+            //}
         }
     }
 
@@ -276,6 +325,8 @@ class LuaThread : LuaValue {
          * collection is run.  This can be changed by Java startup code if desired.
          */
         var thread_orphan_check_interval: Long = 5000
+        //var thread_orphan_check_interval: Long = 500
+        //var thread_orphan_check_interval: Long = 100
 
         const val STATUS_INITIAL = 0
         const val STATUS_SUSPENDED = 1

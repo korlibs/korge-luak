@@ -23,6 +23,18 @@ package org.luaj.vm2.lib
 
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
+import org.luaj.vm2.internal.runBlockingNoSuspensions
+
+abstract class VarArgFunctionSuspend : BaseVarArgFunction() {
+    //final override fun invoke(args: Varargs): Varargs = runBlockingNoSuspensions { invokeSuspend(args) }
+    final override fun invoke(args: Varargs): Varargs = TODO("invokeSuspend expected to be called")
+    abstract override suspend fun invokeSuspend(args: Varargs): Varargs
+}
+
+abstract class VarArgFunction : BaseVarArgFunction() {
+    abstract override fun invoke(args: Varargs): Varargs
+    final override suspend fun invokeSuspend(args: Varargs): Varargs = invoke(args)
+}
 
 /** Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
@@ -52,23 +64,11 @@ import org.luaj.vm2.Varargs
  *
  * @see ThreeArgFunction
  */
-abstract class VarArgFunction : LibFunction() {
-
-    override fun call(): LuaValue {
-        return invoke(LuaValue.NONE).arg1()
-    }
-
-    override fun call(arg: LuaValue): LuaValue {
-        return invoke(arg).arg1()
-    }
-
-    override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue {
-        return invoke(LuaValue.varargsOf(arg1, arg2)).arg1()
-    }
-
-    override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
-        return invoke(LuaValue.varargsOf(arg1, arg2, arg3)).arg1()
-    }
+abstract class BaseVarArgFunction : LibFunction() {
+    override fun call(): LuaValue = invoke(LuaValue.NONE).arg1()
+    override fun call(arg: LuaValue): LuaValue = invoke(arg).arg1()
+    override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue = invoke(LuaValue.varargsOf(arg1, arg2)).arg1()
+    override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = invoke(LuaValue.varargsOf(arg1, arg2, arg3)).arg1()
 
     /**
      * Subclass responsibility.
@@ -77,11 +77,13 @@ abstract class VarArgFunction : LibFunction() {
      * - function has a possibility of returning a TailcallVarargs
      * @param args the arguments to the function call.
      */
-    override fun invoke(args: Varargs): Varargs {
-        return onInvoke(args).eval()
-    }
+    override fun invoke(args: Varargs): Varargs = onInvoke(args).eval()
+    override fun onInvoke(args: Varargs): Varargs = invoke(args)
 
-    override fun onInvoke(args: Varargs): Varargs {
-        return invoke(args)
-    }
-} 
+    override suspend fun callSuspend(): LuaValue = invokeSuspend(LuaValue.NONE).arg1()
+    override suspend fun callSuspend(arg: LuaValue): LuaValue = invokeSuspend(arg).arg1()
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue = invokeSuspend(LuaValue.varargsOf(arg1, arg2)).arg1()
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = invokeSuspend(LuaValue.varargsOf(arg1, arg2, arg3)).arg1()
+    override suspend fun invokeSuspend(args: Varargs): Varargs = invoke(args)
+    override suspend fun onInvokeSuspend(args: Varargs): Varargs = invokeSuspend(args)
+}

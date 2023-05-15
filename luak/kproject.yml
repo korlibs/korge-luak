@@ -2,5 +2,4 @@ name: "luak"
 plugins:
   #- serialization
 dependencies:
-  #- "maven::common::com.soywiz.korlibs.korge2:korge"
-
+- "maven::common::org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1"

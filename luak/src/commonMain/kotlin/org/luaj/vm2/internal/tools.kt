@@ -14,9 +14,10 @@ internal val KClass<*>.portableName: String get() = JSystem.Class_portableName(t
 internal fun KClass<*>.isInstancePortable(ins: Any): Boolean = JSystem.Class_isInstancePortable(this, ins)
 internal fun KClass<*>.getResourceAsStreamPortable(res: String): LuaBinInput? = JSystem.Class_getResourceAsStreamPortable(this, res)
 
-internal fun Throwable.printStackTrace() {
-    println(this)
-}
+//internal fun Throwable.printStackTrace() {
+//    //printStackTrace()
+//    println(this)
+//}
 
 internal fun Int.toHexString() = toString(16)
 internal fun Char.isDigit() = this in '0'..'9'

@@ -23,6 +23,17 @@ package org.luaj.vm2.lib
 
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
+import org.luaj.vm2.internal.runBlockingNoSuspensions
+
+abstract class OneArgFunctionSuspend : BaseOneArgFunction() {
+    final override fun call(arg: LuaValue): LuaValue = runBlockingNoSuspensions { callSuspend(arg) }
+    abstract override suspend fun callSuspend(arg: LuaValue): LuaValue
+}
+
+abstract class OneArgFunction : BaseOneArgFunction() {
+    abstract override fun call(arg: LuaValue): LuaValue
+    final override suspend fun callSuspend(arg: LuaValue): LuaValue = call(arg)
+}
 
 /** Abstract base class for Java function implementations that take one argument and
  * return one value.
@@ -54,23 +65,18 @@ import org.luaj.vm2.Varargs
  * @see VarArgFunction
  */
 /** Default constructor  */
-abstract class OneArgFunction : LibFunction() {
+abstract class BaseOneArgFunction : LibFunction() {
 
     abstract override fun call(arg: LuaValue): LuaValue
+    abstract override suspend fun callSuspend(arg: LuaValue): LuaValue
 
-    override fun call(): LuaValue {
-        return call(LuaValue.NIL)
-    }
+    override fun call(): LuaValue = call(LuaValue.NIL)
+    override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue = call(arg1)
+    override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = call(arg1)
+    override fun invoke(varargs: Varargs): Varargs = call(varargs.arg1())
 
-    override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue {
-        return call(arg1)
-    }
-
-    override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
-        return call(arg1)
-    }
-
-    override fun invoke(varargs: Varargs): Varargs {
-        return call(varargs.arg1())
-    }
-} 
+    override suspend fun callSuspend(): LuaValue = callSuspend(LuaValue.NIL)
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue = callSuspend(arg1)
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = callSuspend(arg2)
+    override suspend fun invokeSuspend(args: Varargs): Varargs = callSuspend(args.arg1())
+}

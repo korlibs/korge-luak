@@ -58,20 +58,10 @@ abstract class TwoArgFunction : LibFunction() {
 
     abstract override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue
 
-    override fun call(): LuaValue {
-        return call(LuaValue.NIL, LuaValue.NIL)
-    }
+    override fun call(): LuaValue = call(NIL, NIL)
+    override fun call(arg: LuaValue): LuaValue = call(arg, NIL)
+    override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = call(arg1, arg2)
+    override fun invoke(varargs: Varargs): Varargs = call(varargs.arg1(), varargs.arg(2))
 
-    override fun call(arg: LuaValue): LuaValue {
-        return call(arg, LuaValue.NIL)
-    }
-
-    override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
-        return call(arg1, arg2)
-    }
-
-    override fun invoke(varargs: Varargs): Varargs {
-        return call(varargs.arg1(), varargs.arg(2))
-    }
-
-} 
+    //override suspend fun callSuspend(): LuaValue = callSuspend(NIL, NIL)
+}

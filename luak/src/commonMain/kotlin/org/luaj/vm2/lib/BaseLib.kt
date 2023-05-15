@@ -149,11 +149,11 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
                 }
                 "count" -> {
                     val used = JSystem.totalMemory() - JSystem.freeMemory()
-                    return LuaValue.varargsOf(LuaValue.valueOf(used / 1024.0), LuaValue.valueOf((used % 1024).toDouble()))
+                    return varargsOf(valueOf(used / 1024.0), valueOf((used % 1024).toDouble()))
                 }
                 "step" -> {
                     JSystem.gc()
-                    return LuaValue.BTRUE
+                    return BTRUE
                 }
                 else -> this.argerror("gc op")
             }
@@ -176,12 +176,11 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     // "error", // ( message [,level] ) -> ERR
     internal class Error : TwoArgFunction() {
         override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue {
-            throw if (arg1.isnil())
-                LuaError(null!!, arg2.optint(1))
-            else if (arg1.isstring())
-                LuaError(arg1.tojstring(), arg2.optint(1))
-            else
-                LuaError(arg1)
+            throw when {
+                arg1.isnil() -> LuaError("nil", arg2.optint(1))
+                arg1.isstring() -> LuaError(arg1.tojstring(), arg2.optint(1))
+                else -> LuaError(arg1)
+            }
         }
     }
 
@@ -193,24 +192,55 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
 
         override fun call(arg: LuaValue): LuaValue {
             val mt = arg.getmetatable()
-            return mt?.rawget(LuaValue.METATABLE)?.optvalue(mt) ?: LuaValue.NIL
+            return mt?.rawget(LuaValue.METATABLE)?.optvalue(mt) ?: NIL
+        }
+    }
+
+    suspend fun stringOrStringFunctionGeneratorToString(ld: LuaValue): String {
+        return when {
+            ld.isstring() -> {
+                ld.strvalue()!!.toString()
+            }
+            else -> {
+                val func = ld.checkfunction()!!
+                buildString {
+                    var n = 0
+                    while (true) {
+                        //println("!!loadStream: '$n'")
+                        val result = func.callSuspend(NONE)
+                        if (result.isnil()) break
+                        //println("!!loadStream: '$n' : result=$result")
+                        append(result.toString())
+                        n++
+                        //println("Load.invokeSuspend.result:: narg=${result.narg()} '$result'")
+                    }
+                    //TODO()
+                }
+            }
         }
     }
 
     // "load", // ( ld [, source [, mode [, env]]] ) -> chunk | nil, msg
-    internal inner class Load : VarArgFunction() {
-        override fun invoke(args: Varargs): Varargs {
+    internal inner class Load : BaseVarArgFunction() {
+        override suspend fun invokeSuspend(args: Varargs): Varargs {
             val ld = args.arg1()
             args.argcheck(ld.isstring() || ld.isfunction(), 1, "ld must be string or function")
             val source = args.optjstring(2, if (ld.isstring()) ld.tojstring() else "=(load)")
             val mode = args.optjstring(3, "bt")
             val env = args.optvalue(4, globals!!)
-            return loadStream(
-                if (ld.isstring())
-                    ld.strvalue()!!.toLuaBinInput()
-                else
-                    StringInputStream(ld.checkfunction()!!), source, mode, env
-            )
+
+            try {
+                return loadStream(
+                    LuaString.valueOf(stringOrStringFunctionGeneratorToString(ld)).toLuaBinInput(), source, mode, env
+                )
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                throw e
+            }
+        }
+
+        override fun invoke(args: Varargs): Varargs {
+            return runBlockingNoSuspensions { invokeSuspend(args) }
         }
     }
 
@@ -226,19 +256,35 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     }
 
     // "pcall", // (f, arg1, ...) -> status, result1, ...
-    internal inner class Pcall : VarArgFunction() {
+    internal inner class Pcall : BaseVarArgFunction() {
+        override suspend fun invokeSuspend(args: Varargs): Varargs {
+            val func = args.checkvalue(1)
+            globals?.debuglib?.onCall(this)
+            return try {
+                varargsOf(BTRUE, func.invokeSuspend(args.subargs(2)))
+            } catch (le: LuaError) {
+                val m = le.messageObject
+                varargsOf(BFALSE, m ?: NIL)
+            } catch (e: Exception) {
+                val m = e.message
+                varargsOf(BFALSE, valueOf(m ?: e.toString()))
+            } finally {
+                globals?.debuglib?.onReturn()
+            }
+        }
+
         override fun invoke(args: Varargs): Varargs {
             val func = args.checkvalue(1)
             if (globals != null && globals!!.debuglib != null)
                 globals!!.debuglib!!.onCall(this)
             try {
-                return LuaValue.varargsOf(LuaValue.BTRUE, func.invoke(args.subargs(2)))
+                return varargsOf(BTRUE, func.invoke(args.subargs(2)))
             } catch (le: LuaError) {
                 val m = le.messageObject
-                return LuaValue.varargsOf(LuaValue.BFALSE, m ?: LuaValue.NIL)
+                return varargsOf(BFALSE, m ?: NIL)
             } catch (e: Exception) {
                 val m = e.message
-                return LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(m ?: e.toString()))
+                return varargsOf(BFALSE, valueOf(m ?: e.toString()))
             } finally {
                 if (globals != null && globals!!.debuglib != null)
                     globals!!.debuglib!!.onReturn()
@@ -275,7 +321,7 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
         }
 
         override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue {
-            return LuaValue.valueOf(arg1.raweq(arg2))
+            return valueOf(arg1.raweq(arg2))
         }
     }
 
@@ -298,7 +344,7 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     // "rawlen", // (v) -> value
     internal class Rawlen : LibFunction() {
         override fun call(arg: LuaValue): LuaValue {
-            return LuaValue.valueOf(arg.rawlen())
+            return valueOf(arg.rawlen())
         }
     }
 
@@ -323,8 +369,8 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     internal class Select : VarArgFunction() {
         override fun invoke(args: Varargs): Varargs {
             val n = args.narg() - 1
-            if (args.arg1() == LuaValue.valueOf("#"))
-                return LuaValue.valueOf(n)
+            if (args.arg1() == valueOf("#"))
+                return valueOf(n)
             val i = args.checkint(1)
             if (i == 0 || i < -n)
                 LuaValue.argerror(1, "index out of range")
@@ -369,14 +415,14 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
             if (!h.isnil())
                 return h.call(arg)
             val v = arg.tostring()
-            return if (!v.isnil()) v else LuaValue.valueOf(arg.tojstring())
+            return if (!v.isnil()) v else valueOf(arg.tojstring())
         }
     }
 
     // "type",  // (v) -> value
     internal class Type : LibFunction() {
         override fun call(arg: LuaValue): LuaValue {
-            return LuaValue.valueOf(arg.typename())
+            return valueOf(arg.typename())
         }
     }
 
@@ -390,13 +436,13 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
                 if (globals != null && globals!!.debuglib != null)
                     globals!!.debuglib!!.onCall(this)
                 try {
-                    return LuaValue.varargsOf(LuaValue.BTRUE, args.arg1().invoke(args.subargs(3)))
+                    return varargsOf(BTRUE, args.arg1().invoke(args.subargs(3)))
                 } catch (le: LuaError) {
                     val m = le.messageObject
-                    return LuaValue.varargsOf(LuaValue.BFALSE, m ?: LuaValue.NIL)
+                    return varargsOf(BFALSE, m ?: NIL)
                 } catch (e: Exception) {
                     val m = e.message
-                    return LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(m ?: e.toString()))
+                    return varargsOf(BFALSE, valueOf(m ?: e.toString()))
                 } finally {
                     if (globals != null && globals!!.debuglib != null)
                         globals!!.debuglib!!.onReturn()
@@ -410,7 +456,7 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     // "pairs" (t) -> iter-func, t, nil
     internal class Pairs(val next: Next) : VarArgFunction() {
         override fun invoke(args: Varargs): Varargs {
-            return LuaValue.varargsOf(next, args.checktable(1)!!, LuaValue.NIL)
+            return varargsOf(next, args.checktable(1)!!, NIL)
         }
     }
 
@@ -418,7 +464,7 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     internal class Ipairs : VarArgFunction() {
         var inext = inext()
         override fun invoke(args: Varargs): Varargs {
-            return LuaValue.varargsOf(inext, args.checktable(1)!!, LuaValue.ZERO)
+            return varargsOf(inext, args.checktable(1)!!, LuaValue.ZERO)
         }
     }
 
@@ -443,9 +489,9 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
      * @return Varargs containing chunk, or NIL,error-text on error
      */
     fun loadFile(filename: String?, mode: String?, env: LuaValue?): Varargs {
-        val `is` = globals!!.finder!!.findResource(filename!!) ?: return LuaValue.varargsOf(
-            LuaValue.NIL,
-            LuaValue.valueOf("cannot open $filename: No such file or directory")
+        val `is` = globals!!.finder!!.findResource(filename!!) ?: return varargsOf(
+            NIL,
+            valueOf("cannot open $filename: No such file or directory")
         )
         try {
             return loadStream(`is`, "@$filename", mode, env)
@@ -460,13 +506,13 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     }
 
     fun loadStream(`is`: LuaBinInput?, chunkname: String?, mode: String?, env: LuaValue?): Varargs {
-        try {
-            return if (`is` == null) LuaValue.varargsOf(
-                LuaValue.NIL,
-                LuaValue.valueOf("not found: " + chunkname!!)
-            ) else globals!!.load(`is`, chunkname!!, mode!!, env!!)
+        return try {
+            when (`is`) {
+                null -> varargsOf(NIL, valueOf("not found: $chunkname"))
+                else -> globals!!.load(`is`, chunkname!!, mode!!, env!!)
+            }
         } catch (e: Exception) {
-            return LuaValue.varargsOf(LuaValue.NIL, LuaValue.valueOf(e.message!!))
+            varargsOf(NIL, valueOf(e.message!!))
         }
 
     }

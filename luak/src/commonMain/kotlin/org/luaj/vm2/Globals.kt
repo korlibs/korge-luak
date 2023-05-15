@@ -125,6 +125,8 @@ open class Globals(
     val runtime: LuaRuntime = LuaRuntime()
 ) : LuaTable() {
 
+    var thread_orphan_check_interval: Long = LuaThread.thread_orphan_check_interval
+
     /** The current default input stream.  */
     @kotlin.jvm.JvmField var STDIN: LuaBinInput = JSystem.`in`
 
@@ -305,8 +307,8 @@ open class Globals(
      * @param args  Arguments to supply as return values in the resume function of the resuming thread.
      * @return Values supplied as arguments to the resume() call that reactivates this thread.
      */
-    fun yield(args: Varargs): Varargs {
-        if (running.isMainThread) throw LuaError("cannot yield main thread")
+    suspend fun yield(args: Varargs): Varargs {
+        //if (running.isMainThread) throw LuaError("cannot yield main thread")
         val s = running.state
         return s.lua_yield(args)
     }

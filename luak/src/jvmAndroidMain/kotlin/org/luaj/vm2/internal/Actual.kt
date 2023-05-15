@@ -22,9 +22,6 @@ internal actual object JSystem {
         null
     }
     actual fun StartNativeThread(runnable: () -> Unit, name: String): Unit = Thread(Runnable(runnable), name).start()
-    actual fun Object_notify(obj: Any) = (obj as Object).notify()
-    actual fun Object_wait(obj: Any) = (obj as Object).wait()
-    actual fun Object_wait(obj: Any, time: Long) = (obj as Object).wait(time)
 
     actual fun Class_portableName(clazz: KClass<*>): String = clazz.java.name
     actual fun Class_isInstancePortable(clazz: KClass<*>, ins: Any): Boolean = clazz.java.isAssignableFrom(ins::class.java)

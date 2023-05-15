@@ -96,8 +96,8 @@ class CoroutineLib : TwoArgFunction() {
         }
     }
 
-    internal inner class resume : VarArgFunction() {
-        override fun invoke(args: Varargs): Varargs {
+    internal inner class resume : VarArgFunctionSuspend() {
+        override suspend fun invokeSuspend(args: Varargs): Varargs {
             val t = args.checkthread(1)
             return t!!.resume(args.subargs(2))
         }
@@ -117,8 +117,8 @@ class CoroutineLib : TwoArgFunction() {
         }
     }
 
-    internal inner class yield : VarArgFunction() {
-        override fun invoke(args: Varargs): Varargs {
+    internal inner class yield : VarArgFunctionSuspend() {
+        override suspend fun invokeSuspend(args: Varargs): Varargs {
             return globals!!.yield(args)
         }
     }
@@ -131,8 +131,8 @@ class CoroutineLib : TwoArgFunction() {
         }
     }
 
-    internal inner class wrapper(val luathread: LuaThread) : VarArgFunction() {
-        override fun invoke(args: Varargs): Varargs {
+    internal inner class wrapper(val luathread: LuaThread) : VarArgFunctionSuspend() {
+        override suspend fun invokeSuspend(args: Varargs): Varargs {
             val result = luathread.resume(args)
             return if (result.arg1().toboolean()) {
                 result.subargs(2)
@@ -143,7 +143,6 @@ class CoroutineLib : TwoArgFunction() {
     }
 
     companion object {
-
         internal var coroutine_count = 0
     }
 }

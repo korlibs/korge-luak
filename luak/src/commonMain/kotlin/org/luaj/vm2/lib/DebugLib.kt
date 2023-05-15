@@ -132,7 +132,7 @@ class DebugLib : TwoArgFunction() {
             val t = if (args.narg() > 0) args.checkthread(1) else globals.running
             val s = t!!.state
             return LuaValue.varargsOf(
-                if (s.hookfunc != null) s.hookfunc!! else LuaValue.NIL,
+                if (s.hookfunc != null) s.hookfunc!! else NIL,
                 LuaValue.valueOf((if (s.hookcall) "c" else "") + (if (s.hookline) "l" else "") + if (s.hookrtrn) "r" else ""),
                 LuaValue.valueOf(s.hookcount)
             )
@@ -221,7 +221,7 @@ class DebugLib : TwoArgFunction() {
     internal inner class Getmetatable : LibFunction() {
         override fun call(v: LuaValue): LuaValue {
             val mt = v.getmetatable()
-            return mt ?: LuaValue.NIL
+            return mt ?: NIL
         }
     }
 
@@ -244,14 +244,14 @@ class DebugLib : TwoArgFunction() {
                     return LuaValue.varargsOf(name, c.upValues[up - 1]!!.value!!)
                 }
             }
-            return LuaValue.NIL
+            return NIL
         }
     }
 
     //	debug.getuservalue (u)
     internal class Getuservalue : LibFunction() {
         override fun call(u: LuaValue): LuaValue {
-            return if (u.isuserdata()) u else LuaValue.NIL
+            return if (u.isuserdata()) u else NIL
         }
     }
 
@@ -327,7 +327,7 @@ class DebugLib : TwoArgFunction() {
                     return name
                 }
             }
-            return LuaValue.NIL
+            return NIL
         }
     }
 
@@ -366,7 +366,7 @@ class DebugLib : TwoArgFunction() {
                     return LuaValue.valueOf(c.upValues[up - 1].hashCode())
                 }
             }
-            return LuaValue.NIL
+            return NIL
         }
     }
 
@@ -390,14 +390,14 @@ class DebugLib : TwoArgFunction() {
         val s = globals.running.state
         if (s.inhook) return
         callstack().onCall(f)
-        if (s.hookcall) callHook(s, CALL, LuaValue.NIL)
+        if (s.hookcall) callHook(s, CALL, NIL)
     }
 
     fun onCall(c: LuaClosure, varargs: Varargs, stack: Array<LuaValue>) {
         val s = globals.running.state
         if (s.inhook) return
         callstack().onCall(c, varargs, stack)
-        if (s.hookcall) callHook(s, CALL, LuaValue.NIL)
+        if (s.hookcall) callHook(s, CALL, NIL)
     }
 
     fun onInstruction(pc: Int, v: Varargs, top: Int) {
@@ -407,7 +407,7 @@ class DebugLib : TwoArgFunction() {
         if (s.hookfunc == null) return
         if (s.hookcount > 0)
             if (++s.bytecodes % s.hookcount == 0)
-                callHook(s, COUNT, LuaValue.NIL)
+                callHook(s, COUNT, NIL)
         if (s.hookline) {
             val newline = callstack().currentline()
             if (newline != s.lastline) {
@@ -421,7 +421,7 @@ class DebugLib : TwoArgFunction() {
         val s = globals.running.state
         if (s.inhook) return
         callstack().onReturn()
-        if (s.hookrtrn) callHook(s, RETURN, LuaValue.NIL)
+        if (s.hookrtrn) callHook(s, RETURN, NIL)
     }
 
     fun traceback(level: Int): String {
@@ -668,7 +668,7 @@ class DebugLib : TwoArgFunction() {
             return if (name != null)
                 LuaValue.varargsOf(name, stack!![i - 1])
             else
-                LuaValue.NIL
+                NIL
         }
 
         fun setLocal(i: Int, value: LuaValue): Varargs {
@@ -677,7 +677,7 @@ class DebugLib : TwoArgFunction() {
                 stack!![i - 1] = value
                 return name
             } else {
-                return LuaValue.NIL
+                return NIL
             }
         }
 

@@ -21,8 +21,11 @@
  */
 package org.luaj.vm2
 
+import kotlinx.coroutines.job
+import org.luaj.test.suspendTest
 import org.luaj.vm2.io.*
 import java.io.*
+import kotlin.coroutines.coroutineContext
 import kotlin.test.*
 
 /**
@@ -33,20 +36,22 @@ import kotlin.test.*
  */
 class ErrorsTest : ScriptDrivenTest(ScriptDrivenTest.PlatformType.JSE, dir) {
 
-    fun testBaseLibArgs() {
+    fun testBaseLibArgs() = suspendTest {
         globals.STDIN = object : LuaBinInput() { override fun read(): Int = -1 }
         runTest("baselibargs")
     }
 
-    @Test fun testCoroutineLibArgs() { runTest("coroutinelibargs") }
+    @Test
+    //@Ignore("Check")
+    fun testCoroutineLibArgs() = suspendTest { runTest("coroutinelibargs") }
 
     //@Test fun testDebugLibArgs() { runTest("debuglibargs") }
     //@Test fun testIoLibArgs() { runTest("iolibargs") }
-    @Test fun testMathLibArgs() { runTest("mathlibargs") }
+    @Test fun testMathLibArgs() = suspendTest { runTest("mathlibargs") }
     //@Test fun testModuleLibArgs() { runTest("modulelibargs") }
-    @Test fun testOperators() { runTest("operators") }
+    @Test fun testOperators() = suspendTest { runTest("operators") }
     //@Test fun testStringLibArgs() { runTest("stringlibargs") }
-    @Test fun testTableLibArgs() { runTest("tablelibargs") }
+    @Test fun testTableLibArgs() = suspendTest { runTest("tablelibargs") }
 
     companion object {
 
