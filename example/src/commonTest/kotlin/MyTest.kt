@@ -40,7 +40,7 @@ class MyTest {
                return "completed"
              end)
             
-            for i=1,10 do
+            for i=1,6 do
                 local code, res = coroutine.resume(co)
                 print(code, res)
             end
@@ -59,6 +59,8 @@ class MyTest {
                 true	3
                 co	4
                 true	4
+                true	completed
+                false	cannot resume dead(4) coroutine
                 ENDED!
             """.trimIndent().trim(),
             stdout.toByteArray().toString(Charsets.UTF8).trim()

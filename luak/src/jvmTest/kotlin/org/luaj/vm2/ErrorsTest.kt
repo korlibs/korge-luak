@@ -40,7 +40,7 @@ class ErrorsTest : ScriptDrivenTest(ScriptDrivenTest.PlatformType.JSE, dir) {
     }
 
     @Test
-    @Ignore("Check")
+    @Ignore("We should cover some stuff here")
     fun testCoroutineLibArgs() = suspendTest { runTest("coroutinelibargs") }
 
     //@Test fun testDebugLibArgs() { runTest("debuglibargs") }
