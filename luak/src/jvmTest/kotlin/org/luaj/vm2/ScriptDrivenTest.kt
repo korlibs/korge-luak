@@ -122,7 +122,7 @@ abstract class ScriptDrivenTest protected constructor(private val platform: Plat
     }
 
     // */
-    protected fun runTest(testName: String) {
+    protected suspend fun runTest(testName: String) {
         try {
             // override print()
             val output = ByteArrayLuaBinOutput()
@@ -133,7 +133,7 @@ abstract class ScriptDrivenTest protected constructor(private val platform: Plat
             // run the script
             try {
                 val chunk = loadScript(testName, globals)
-                chunk.call(LuaValue.valueOf(platform.toString()))
+                chunk.callSuspend(LuaValue.valueOf(platform.toString()))
 
                 ps.flush()
                 var actualOutput = String(output.toByteArray())

@@ -226,7 +226,25 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     }
 
     // "pcall", // (f, arg1, ...) -> status, result1, ...
-    internal inner class Pcall : VarArgFunction() {
+    internal inner class Pcall : BaseVarArgFunction() {
+        override suspend fun invokeSuspend(args: Varargs): Varargs {
+            val func = args.checkvalue(1)
+            if (globals != null && globals!!.debuglib != null)
+                globals!!.debuglib!!.onCall(this)
+            try {
+                return LuaValue.varargsOf(LuaValue.BTRUE, func.invokeSuspend(args.subargs(2)))
+            } catch (le: LuaError) {
+                val m = le.messageObject
+                return LuaValue.varargsOf(LuaValue.BFALSE, m ?: LuaValue.NIL)
+            } catch (e: Exception) {
+                val m = e.message
+                return LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(m ?: e.toString()))
+            } finally {
+                if (globals != null && globals!!.debuglib != null)
+                    globals!!.debuglib!!.onReturn()
+            }
+        }
+
         override fun invoke(args: Varargs): Varargs {
             val func = args.checkvalue(1)
             if (globals != null && globals!!.debuglib != null)

@@ -91,6 +91,8 @@ abstract class Varargs {
      */
     open fun eval(): Varargs = this
 
+    open suspend fun evalSuspend(): Varargs = eval()
+
     // -----------------------------------------------------------------------
     // utilities to get specific arguments and type-check them.
     // -----------------------------------------------------------------------

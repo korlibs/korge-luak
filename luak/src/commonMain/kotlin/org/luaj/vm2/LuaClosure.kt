@@ -117,21 +117,6 @@ class LuaClosure
         return executeSuspend(stack, LuaValue.NONE).arg1()
     }
 
-    override suspend fun callSuspend(arg: LuaValue): LuaValue {
-        //return super.callSuspend(arg)
-        TODO()
-    }
-
-    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue {
-        //return super.callSuspend(arg1, arg2)
-        TODO()
-    }
-
-    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
-        //return super.callSuspend(arg1, arg2, arg3)
-        TODO()
-    }
-
     override fun call(): LuaValue {
         val stack = arrayOfNulls<LuaValue>(p.maxstacksize) as Array<LuaValue>
         for (i in 0 until p.numparams) stack[i] = LuaValue.NIL
@@ -192,7 +177,7 @@ class LuaClosure
     }
 
     override suspend fun invokeSuspend(varargs: Varargs): Varargs {
-        return onInvokeSuspend(varargs).eval()
+        return onInvokeSuspend(varargs).evalSuspend()
     }
 
     override suspend fun onInvokeSuspend(varargs: Varargs): Varargs {

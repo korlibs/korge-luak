@@ -38,7 +38,6 @@ class MyTest {
                return "completed"
              end)
             
-            print(co)
             for i=1,4 do
                 print(coroutine.resume(co))
             end
@@ -49,7 +48,6 @@ class MyTest {
 
         assertEquals(
             """
-                thread: 4dc8caa7
                 co	1
                 true
                 co	2
