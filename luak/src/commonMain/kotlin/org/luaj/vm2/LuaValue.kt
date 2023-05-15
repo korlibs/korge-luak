@@ -1511,11 +1511,11 @@ abstract class LuaValue : Varargs() {
     }
 
     open suspend fun callSuspend(): LuaValue {
-        return call()
+        return callSuspend(LuaValue.NONE).arg1()
     }
 
     open suspend fun callSuspend(arg: LuaValue): LuaValue {
-        return call(arg)
+        return invokeSuspend(arg).arg1()
     }
 
     open suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue {

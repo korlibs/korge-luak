@@ -36,6 +36,6 @@ class MyTest {
             print(coroutine.resume(co))
         """.trimIndent())
         println("code=$code")
-        code.call()
+        code.callSuspend()
     }
 }
