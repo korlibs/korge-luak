@@ -44,6 +44,7 @@ class CoroutineTest {
             load(CoroutineLib())
             LoadState.install(this)
             LuaC.install(this)
+            this.thread_orphan_check_interval = 200L
         }
         val code = globals.load(
             // language=lua

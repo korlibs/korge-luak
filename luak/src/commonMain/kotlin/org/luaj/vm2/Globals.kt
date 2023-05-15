@@ -125,6 +125,8 @@ open class Globals(
     val runtime: LuaRuntime = LuaRuntime()
 ) : LuaTable() {
 
+    var thread_orphan_check_interval: Long = LuaThread.thread_orphan_check_interval
+
     /** The current default input stream.  */
     @kotlin.jvm.JvmField var STDIN: LuaBinInput = JSystem.`in`
 

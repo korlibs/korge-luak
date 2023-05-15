@@ -39,7 +39,9 @@ class OrphanedThreadTest {
     @BeforeTest
     fun setUp() {
         LuaThread.thread_orphan_check_interval = 5
-        globals = JsePlatform.standardGlobals()
+        globals = JsePlatform.standardGlobals().also {
+            it.thread_orphan_check_interval = 100L
+        }
     }
 
     @AfterTest

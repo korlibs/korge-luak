@@ -21,9 +21,11 @@
  */
 package org.luaj.vm2
 
+import kotlinx.coroutines.job
 import org.luaj.test.suspendTest
 import org.luaj.vm2.io.*
 import java.io.*
+import kotlin.coroutines.coroutineContext
 import kotlin.test.*
 
 /**

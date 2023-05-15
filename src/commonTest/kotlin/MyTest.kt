@@ -17,7 +17,7 @@ class MyTest {
 
     @Test
     fun testCoroutines() = suspendTest {
-        var stdout = ByteArrayLuaBinOutput()
+        val stdout = ByteArrayLuaBinOutput()
         val globals = Globals().apply {
             STDOUT = LuaWriterBinOutput(stdout)
             load(BaseLib())
