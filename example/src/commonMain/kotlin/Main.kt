@@ -1,9 +1,15 @@
-import korlibs.korge.*
-import korlibs.korge.scene.*
-import korlibs.korge.ui.*
-import korlibs.korge.view.*
-import org.luaj.vm2.*
-import org.luaj.vm2.compiler.*
+import korlibs.korge.Korge
+import korlibs.korge.scene.Scene
+import korlibs.korge.scene.sceneContainer
+import korlibs.korge.ui.uiVerticalStack
+import korlibs.korge.view.SContainer
+import korlibs.korge.view.text
+import korlibs.korge.view.xy
+import org.luaj.vm2.Globals
+import org.luaj.vm2.LoadState
+import org.luaj.vm2.LuaValue
+import org.luaj.vm2.Varargs
+import org.luaj.vm2.compiler.LuaC
 import org.luaj.vm2.lib.*
 
 suspend fun main() = Korge {
@@ -21,6 +27,9 @@ class MainLuaScene : Scene() {
             textStack.text(str)
             //kotlin.io.println()
         }
+
+        //globals.STDOUT = LuaWriterBinOutput(object : LuaBinOutput {
+        //})
 
         // Overwrite print function
         globals["print"] = object : VarArgFunction() {
@@ -49,8 +58,24 @@ class MainLuaScene : Scene() {
             b[1] = 10
             print(b)
             for i=4,1,-1 do print(i) end
+            
+            
+            co = coroutine.create(function ()
+               for i=1,5 do
+                 print("co", i)
+                 coroutine.yield(i, i + 1)
+               end
+               return "completed"
+             end)
+            
+            for i=1,12 do
+                local code, res = coroutine.resume(co)
+                print(code, res)
+            end
+            print("ENDED!")
+
             return res
-        """).call()
+        """).callSuspend()
 
         luaprintln(result.toString())
     }

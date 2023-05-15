@@ -29,17 +29,20 @@ class MyTest {
             LoadState.install(this)
             LuaC.install(this)
         }
-        val code = globals.load("""
+        val code = globals.load(
+            // language=lua
+            """
             co = coroutine.create(function ()
                for i=1,10 do
                  print("co", i)
-                 coroutine.yield()
+                 coroutine.yield(i, i + 1)
                end
                return "completed"
              end)
             
             for i=1,4 do
-                print(coroutine.resume(co))
+                local code, res = coroutine.resume(co)
+                print(code, res)
             end
             print("ENDED!")
         """.trimIndent())
@@ -49,13 +52,13 @@ class MyTest {
         assertEquals(
             """
                 co	1
-                true
+                true	1
                 co	2
-                true
+                true	2
                 co	3
-                true
+                true	3
                 co	4
-                true
+                true	4
                 ENDED!
             """.trimIndent().trim(),
             stdout.toByteArray().toString(Charsets.UTF8).trim()
