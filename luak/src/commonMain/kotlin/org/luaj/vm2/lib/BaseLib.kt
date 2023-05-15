@@ -176,12 +176,11 @@ open class BaseLib : TwoArgFunction(), ResourceFinder {
     // "error", // ( message [,level] ) -> ERR
     internal class Error : TwoArgFunction() {
         override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue {
-            throw if (arg1.isnil())
-                LuaError(null!!, arg2.optint(1))
-            else if (arg1.isstring())
-                LuaError(arg1.tojstring(), arg2.optint(1))
-            else
-                LuaError(arg1)
+            throw when {
+                arg1.isnil() -> LuaError("nil", arg2.optint(1))
+                arg1.isstring() -> LuaError(arg1.tojstring(), arg2.optint(1))
+                else -> LuaError(arg1)
+            }
         }
     }
 

@@ -1,7 +1,12 @@
 package org.luaj.test
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 actual fun suspendTest(callback: suspend () -> Unit) {
-    runBlocking { callback() }
+    runBlocking {
+        withTimeout(2000L) {
+            callback()
+        }
+    }
 }

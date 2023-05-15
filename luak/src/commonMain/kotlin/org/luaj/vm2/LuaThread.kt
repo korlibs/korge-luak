@@ -25,6 +25,7 @@ package org.luaj.vm2
 import kotlinx.coroutines.*
 import org.luaj.vm2.internal.*
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.suspendCoroutine
 import kotlin.jvm.*
 import kotlin.native.concurrent.*
@@ -215,7 +216,7 @@ class LuaThread : LuaValue {
                 if (this.status == STATUS_INITIAL) {
                     this.status = STATUS_RUNNING
                     val name = "Coroutine-" + ++coroutine_count
-                    CoroutineScope(EmptyCoroutineContext).launch() {
+                    CoroutineScope(coroutineContext).launch() {
                         try {
                             this@State.runSuspend()
                         } finally {

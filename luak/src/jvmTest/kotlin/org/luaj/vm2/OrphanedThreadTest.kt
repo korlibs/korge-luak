@@ -48,28 +48,28 @@ class OrphanedThreadTest {
     }
 
     @Test
-    @Ignore("Check")
+    //@Ignore("Check")
     fun testCollectOrphanedNormalThread() = suspendTest {
         function = NormalFunction(globals)
         doTest(LuaValue.BTRUE, LuaValue.ZERO)
     }
 
     @Test
-    @Ignore("Check")
+    //@Ignore("Check")
     fun testCollectOrphanedEarlyCompletionThread() = suspendTest {
         function = EarlyCompletionFunction(globals)
         doTest(LuaValue.BTRUE, LuaValue.ZERO)
     }
 
     @Test
-    @Ignore("Check")
+    //@Ignore("Check")
     fun testCollectOrphanedAbnormalThread() = suspendTest {
         function = AbnormalFunction(globals)
         doTest(LuaValue.BFALSE, LuaValue.valueOf("abnormal condition"))
     }
 
     @Test
-    @Ignore("Check")
+    //@Ignore("Check")
     fun testCollectOrphanedClosureThread() = suspendTest {
         val script = """
             print('in closure, arg is '..(...))
@@ -84,7 +84,7 @@ class OrphanedThreadTest {
     }
 
     @Test
-    @Ignore("Check")
+    //@Ignore("Check")
     fun testCollectOrphanedPcallClosureThread() = suspendTest {
         function = globals.load("""
             f = function(x)
@@ -101,7 +101,7 @@ class OrphanedThreadTest {
     }
 
     @Test
-    @Ignore("Check")
+    //@Ignore("Check")
     fun testCollectOrphanedLoadClosureThread() = suspendTest {
         val script = """
             t = { "print ", "'hello, ", "world'", }

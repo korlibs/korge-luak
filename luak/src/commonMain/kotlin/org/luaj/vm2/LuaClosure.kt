@@ -195,7 +195,7 @@ class LuaClosure
     }
 
     protected fun execute(stack: Array<LuaValue>, varargs: Varargs): Varargs {
-        Exception().printStackTrace()
+        //Exception().printStackTrace()
         return runBlockingNoSuspensions {
             executeSuspend(stack, varargs)
         }
