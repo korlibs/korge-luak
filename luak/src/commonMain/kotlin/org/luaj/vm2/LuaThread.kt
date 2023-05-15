@@ -22,8 +22,10 @@
 package org.luaj.vm2
 
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import org.luaj.vm2.internal.*
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.suspendCoroutine
@@ -199,9 +201,24 @@ class LuaThread : LuaValue {
             }
         }
 
-        fun _notify() = JSystem.Object_notify(this)
-        fun _wait() = JSystem.Object_wait(this)
-        fun _wait(timeout: Long) = JSystem.Object_wait(this, timeout)
+        private var completableDeferred: CompletableDeferred<Unit>? = null
+
+        suspend fun _notify() {
+            completableDeferred?.complete(Unit)
+        }
+        suspend fun _wait() {
+            completableDeferred = CompletableDeferred()
+            try {
+                completableDeferred?.await()
+            } finally {
+                completableDeferred = null
+            }
+        }
+        suspend fun _wait(timeout: Long) {
+            withTimeout(timeout) {
+                _wait()
+            }
+        }
 
         suspend fun lua_resume(new_thread: LuaThread, args: Varargs): Varargs {
             val previous_thread = globals.running

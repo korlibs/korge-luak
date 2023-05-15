@@ -38,17 +38,6 @@ internal actual object JSystem {
 
     actual fun InstantiateClassByName(name: String): Any? = TODO()
     actual fun StartNativeThread(runnable: () -> Unit, name: String): Unit = TODO()
-    actual fun Object_notify(obj: Any) {
-        TODO()
-    }
-
-    actual fun Object_wait(obj: Any) {
-        TODO()
-    }
-
-    actual fun Object_wait(obj: Any, time: Long) {
-        TODO()
-    }
 
     actual fun Class_portableName(clazz: KClass<*>): String = clazz.simpleName ?: "Unknown"
     actual fun Class_isInstancePortable(clazz: KClass<*>, ins: Any): Boolean = clazz.isInstance(ins)
