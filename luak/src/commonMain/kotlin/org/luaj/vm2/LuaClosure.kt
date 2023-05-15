@@ -191,6 +191,16 @@ class LuaClosure
         }
     }
 
+    override suspend fun invokeSuspend(varargs: Varargs): Varargs {
+        return onInvokeSuspend(varargs).eval()
+    }
+
+    override suspend fun onInvokeSuspend(varargs: Varargs): Varargs {
+        val stack = arrayOfNulls<LuaValue>(p.maxstacksize) as Array<LuaValue>
+        for (i in 0 until p.numparams) stack[i] = varargs.arg(i + 1)
+        return executeSuspend(stack, if (p.is_vararg != 0) varargs.subargs(p.numparams + 1) else LuaValue.NONE)
+    }
+
     override fun invoke(varargs: Varargs): Varargs = onInvoke(varargs).eval()
 
     override fun onInvoke(varargs: Varargs): Varargs {
@@ -200,6 +210,7 @@ class LuaClosure
     }
 
     protected fun execute(stack: Array<LuaValue>, varargs: Varargs): Varargs {
+        Exception().printStackTrace()
         return runBlockingNoSuspensions {
             executeSuspend(stack, varargs)
         }

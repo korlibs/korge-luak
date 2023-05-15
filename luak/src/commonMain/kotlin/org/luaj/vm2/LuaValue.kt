@@ -1511,7 +1511,8 @@ abstract class LuaValue : Varargs() {
     }
 
     open suspend fun callSuspend(): LuaValue {
-        return callSuspend(LuaValue.NONE).arg1()
+        //return callmt().callSuspend(this)
+        return invokeSuspend(LuaValue.NONE).arg1()
     }
 
     open suspend fun callSuspend(arg: LuaValue): LuaValue {
@@ -1519,11 +1520,11 @@ abstract class LuaValue : Varargs() {
     }
 
     open suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue {
-        return call(arg1, arg2)
+        return invokeSuspend(varargsOf(arg1, arg2)).arg1()
     }
 
     open suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
-        return call(arg1, arg2, arg3)
+        return invokeSuspend(varargsOf(arg1, arg2, arg3)).arg1()
     }
 
     suspend fun invokeSuspend(args: Array<LuaValue>): Varargs {
@@ -1531,9 +1532,16 @@ abstract class LuaValue : Varargs() {
     }
 
     open suspend fun invokeSuspend(args: Varargs): Varargs {
+        //println("!!!!! invokeSuspend: this=$this, args=$args")
         //return callmt().invokeSuspend(this, args)
+        //return callmt().invoke(this, args)
         return invoke(args)
     }
+
+    open suspend fun onInvokeSuspend(args: Varargs): Varargs {
+        return onInvoke(args)
+    }
+
 
     suspend fun invokeSuspend(arg: LuaValue, varargs: Varargs): Varargs {
         return invokeSuspend(varargsOf(arg, varargs))

@@ -73,5 +73,4 @@ abstract class TwoArgFunction : LibFunction() {
     override fun invoke(varargs: Varargs): Varargs {
         return call(varargs.arg1(), varargs.arg(2))
     }
-
-} 
+}

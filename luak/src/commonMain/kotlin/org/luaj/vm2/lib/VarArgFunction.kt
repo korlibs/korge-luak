@@ -24,12 +24,14 @@ package org.luaj.vm2.lib
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
 
-abstract class VarArgFunctionSuspend : VarArgFunction() {
-    final override fun invoke(args: Varargs): Varargs {
-        TODO("invokeSuspend expected to be called")
-    }
-
+abstract class VarArgFunctionSuspend : BaseVarArgFunction() {
+    final override fun invoke(args: Varargs): Varargs = TODO("invokeSuspend expected to be called")
     abstract override suspend fun invokeSuspend(args: Varargs): Varargs
+}
+
+abstract class VarArgFunction : BaseVarArgFunction() {
+    abstract override fun invoke(args: Varargs): Varargs
+    final override suspend fun invokeSuspend(args: Varargs): Varargs = invoke(args)
 }
 
 /** Abstract base class for Java function implementations that takes varaiable arguments and
@@ -60,8 +62,7 @@ abstract class VarArgFunctionSuspend : VarArgFunction() {
  *
  * @see ThreeArgFunction
  */
-abstract class VarArgFunction : LibFunction() {
-
+abstract class BaseVarArgFunction : LibFunction() {
     override fun call(): LuaValue {
         return invoke(LuaValue.NONE).arg1()
     }
@@ -92,4 +93,8 @@ abstract class VarArgFunction : LibFunction() {
     override fun onInvoke(args: Varargs): Varargs {
         return invoke(args)
     }
-} 
+
+    override suspend fun invokeSuspend(args: Varargs): Varargs {
+        return invoke(args)
+    }
+}

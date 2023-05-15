@@ -22,10 +22,7 @@
 package org.luaj.vm2
 
 
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 import org.luaj.vm2.internal.*
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.suspendCoroutine
@@ -148,10 +145,13 @@ class LuaThread : LuaValue {
 
     suspend fun resume(args: Varargs): Varargs {
         val s = this.state
-        return if (s.status > LuaThread.STATUS_SUSPENDED) LuaValue.varargsOf(
-            LuaValue.BFALSE,
-            LuaValue.valueOf("cannot resume " + (if (s.status == LuaThread.STATUS_DEAD) "dead" else "non-suspended") + " coroutine")
-        ) else s.lua_resume(this, args)
+        return when {
+            s.status > LuaThread.STATUS_SUSPENDED -> LuaValue.varargsOf(
+                LuaValue.BFALSE,
+                LuaValue.valueOf("cannot resume " + (if (s.status == LuaThread.STATUS_DEAD) "dead" else "non-suspended") + "(${s.status}) coroutine")
+            )
+            else -> s.lua_resume(this, args)
+        }
     }
 
     class State internal constructor(private val globals: Globals, lua_thread: LuaThread, val function: LuaValue?) {
@@ -195,6 +195,7 @@ class LuaThread : LuaValue {
                 this.result = function!!.invokeSuspend(a)
             } catch (t: Throwable) {
                 this.error = t.message
+                t.printStackTrace()
             } finally {
                 this.status = LuaThread.STATUS_DEAD
                 (this)._notify()
@@ -204,13 +205,22 @@ class LuaThread : LuaValue {
         private var completableDeferred: CompletableDeferred<Unit>? = null
 
         suspend fun _notify() {
+            println("!!! NOTIFY")
+            //Exception().printStackTrace()
             completableDeferred?.complete(Unit)
         }
         suspend fun _wait() {
             completableDeferred = CompletableDeferred()
             try {
+                println("!!! WAIT")
                 completableDeferred?.await()
+            } catch (e: TimeoutCancellationException) {
+                // Do nothing
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                throw e
             } finally {
+                println("!!! WAITED")
                 completableDeferred = null
             }
         }
@@ -221,27 +231,34 @@ class LuaThread : LuaValue {
         }
 
         suspend fun lua_resume(new_thread: LuaThread, args: Varargs): Varargs {
+            //Exception().printStackTrace()
             val previous_thread = globals.running
             try {
                 globals.running = new_thread
                 this.args = args
+                yielded = CompletableDeferred()
                 if (this.status == STATUS_INITIAL) {
                     this.status = STATUS_RUNNING
                     val name = "Coroutine-" + ++coroutine_count
                     CoroutineScope(EmptyCoroutineContext).launch() {
-                        this@State.runSuspend()
+                        try {
+                            this@State.runSuspend()
+                        } finally {
+                            //println("!!!! Coroutine completed! with=${this@State.result}")
+                        }
                     }
                 } else {
-                    (this )._notify()
+                    resume?.complete(Unit)
                 }
-                if (previous_thread != null)
-                    previous_thread.state.status = STATUS_NORMAL
+                previous_thread?.state?.status = STATUS_NORMAL
                 this.status = STATUS_RUNNING
-                (this )._wait()
-                return if (this.error != null)
-                    LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(this.error!!))
-                else
-                    LuaValue.varargsOf(LuaValue.BTRUE, this.result)
+                //println("Waiting...")
+                yielded?.await()
+                //println("Finished waiting")
+                return when {
+                    this.error != null -> LuaValue.varargsOf(LuaValue.BFALSE, LuaValue.valueOf(this.error!!))
+                    else -> LuaValue.varargsOf(LuaValue.BTRUE, this.result)
+                }
             } catch (ie: InterruptedException) {
                 throw OrphanedThread()
             } finally {
@@ -249,32 +266,47 @@ class LuaThread : LuaValue {
                 this.result = LuaValue.NONE
                 this.error = null
                 globals.running = previous_thread
-                if (previous_thread != null) {
-                    previous_thread.state.status = STATUS_RUNNING
-                }
+                previous_thread?.state?.status = STATUS_RUNNING
             }
         }
 
+        var yielded: CompletableDeferred<Unit>? = null
+        var resume: CompletableDeferred<Unit>? = null
+
         suspend fun lua_yield(args: Varargs): Varargs {
+            //Exception().printStackTrace()
             try {
+                //println("!!yield ${lua_thread.get()}")
+                this.resume = CompletableDeferred()
                 this.result = args
                 this.status = STATUS_SUSPENDED
-                (this )._notify()
-                do {
-                    (this )._wait(thread_orphan_check_interval)
-                    if (this.lua_thread.get() == null) {
-                        this.status = STATUS_DEAD
-                        throw OrphanedThread()
-                    }
-                } while (this.status == STATUS_SUSPENDED)
-                return this.args
-            } catch (ie: InterruptedException) {
-                this.status = STATUS_DEAD
-                throw OrphanedThread()
+                yielded?.complete(Unit)
+                this.resume?.await()
             } finally {
                 this.args = LuaValue.NONE
                 this.result = LuaValue.NONE
+                return this.args
             }
+
+            //try {
+            //    this.result = args
+            //    this.status = STATUS_SUSPENDED
+            //    (this )._notify()
+            //    do {
+            //        (this )._wait(thread_orphan_check_interval)
+            //        if (this.lua_thread.get() == null) {
+            //            this.status = STATUS_DEAD
+            //            throw OrphanedThread()
+            //        }
+            //    } while (this.status == STATUS_SUSPENDED)
+            //    return this.args
+            //} catch (ie: InterruptedException) {
+            //    this.status = STATUS_DEAD
+            //    throw OrphanedThread()
+            //} finally {
+            //    this.args = LuaValue.NONE
+            //    this.result = LuaValue.NONE
+            //}
         }
     }
 
