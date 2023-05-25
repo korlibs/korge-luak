@@ -77,6 +77,6 @@ abstract class BaseOneArgFunction : LibFunction() {
 
     override suspend fun callSuspend(): LuaValue = callSuspend(LuaValue.NIL)
     override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue = callSuspend(arg1)
-    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = callSuspend(arg2)
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = callSuspend(arg1)
     override suspend fun invokeSuspend(args: Varargs): Varargs = callSuspend(args.arg1())
 }
