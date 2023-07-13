@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     //alias(libs.plugins.korge)
     //id("com.soywiz.korge") version "999.0.0.999"
-    id("com.soywiz.korge") version "4.0.6"
+    id("com.soywiz.korge") version "4.0.8"
 }
 
 korge {
@@ -45,5 +45,10 @@ project.tasks.withType(org.gradle.api.tasks.testing.AbstractTestTask::class.java
         exceptionFormat = TestExceptionFormat.FULL
         showStackTraces = true
         showStandardStreams = true
+    }
+}
+subprojects {
+    if (this.name == "luak") {
+        apply(plugin = "maven-publish")
     }
 }
