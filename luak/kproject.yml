@@ -3,3 +3,5 @@ plugins:
   #- serialization
 dependencies:
 - "maven::common::org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1"
+testDependencies:
+- "maven::common::org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1"
