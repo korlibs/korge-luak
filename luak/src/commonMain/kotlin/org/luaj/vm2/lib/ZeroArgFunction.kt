@@ -23,6 +23,18 @@ package org.luaj.vm2.lib
 
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
+import org.luaj.vm2.internal.runBlockingNoSuspensions
+
+abstract class ZeroArgFunctionSuspend : BaseZeroArgFunction() {
+    final override fun call(): LuaValue =
+        runBlockingNoSuspensions { callSuspend() }
+    abstract override suspend fun callSuspend(): LuaValue
+}
+
+abstract class ZeroArgFunction : BaseZeroArgFunction() {
+    abstract override fun call(): LuaValue
+    final override suspend fun callSuspend(): LuaValue = call()
+}
 
 /** Abstract base class for Java function implementations that take no arguments and
  * return one value.
@@ -52,18 +64,17 @@ import org.luaj.vm2.Varargs
  * @see VarArgFunction
  */
 /** Default constructor  */
-abstract class ZeroArgFunction : LibFunction() {
-
+abstract class BaseZeroArgFunction : LibFunction() {
     abstract override fun call(): LuaValue
+    abstract override suspend fun callSuspend(): LuaValue
+
 
     override fun call(arg: LuaValue): LuaValue {
         return call()
     }
-
     override fun call(arg1: LuaValue, arg2: LuaValue): LuaValue {
         return call()
     }
-
     override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue {
         return call()
     }
@@ -71,4 +82,8 @@ abstract class ZeroArgFunction : LibFunction() {
     override fun invoke(varargs: Varargs): Varargs {
         return call()
     }
+    override suspend fun callSuspend(arg: LuaValue): LuaValue = callSuspend()
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue = callSuspend()
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue = callSuspend()
+    override suspend fun invokeSuspend(args: Varargs): Varargs = callSuspend()
 } 

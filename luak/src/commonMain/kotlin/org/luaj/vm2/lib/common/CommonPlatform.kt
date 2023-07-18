@@ -23,7 +23,7 @@ open class CommonPlatform {
         globals.load(TableLib())
         globals.load(StringLib())
         globals.load(CoroutineLib())
-        globals.load(MathLib())
+        globals.load(MathLib2)
         //globals.load(IoLib())
         globals.load(OsLib())
         LoadState.install(globals)
