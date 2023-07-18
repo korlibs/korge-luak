@@ -7,6 +7,7 @@ import org.luaj.vm2.lib.common.CommonPlatform
 import org.luaj.vm2.lib.common.LibBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.seconds
 
 class WrappedSuspendedFunctionsTest {
     @Test
@@ -81,7 +82,7 @@ class WrappedSuspendedFunctionsTest {
     fun ifVarArgIsWorking() = runTest {
         val globals = createGlobals()
         val result = globals["testLibrary"]["varArg"].callSuspend(valueOf("World"), valueOf("Universe"), valueOf("Galaxy"))
-        assertEquals( "Hello World, Universe and Galaxy", result.tojstring())
+        assertEquals( "Hello World, Universe, Galaxy", result.tojstring())
     }
 
     @Test
@@ -101,7 +102,7 @@ class WrappedSuspendedFunctionsTest {
             return globals
         }
 
-        private val testLibrary = LibBuilder.create("testLibrary") {
+        private val testLibrary = LibBuilder.create("testLibrary", defaultRequire = true) {
             addSuspendedZeroArgWrapped("zeroArg") {
                 delay(500)
                 LuaValue.valueOf("Hello World")
