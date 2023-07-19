@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import org.luaj.vm2.LuaString.Companion.valueOf
 import org.luaj.vm2.lib.common.CommonPlatform
 import org.luaj.vm2.lib.common.LibBuilder
+import org.luaj.vm2.lib.execute
 import org.luaj.vm2.lib.loadLuaModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,26 +20,12 @@ class WrappedSuspendedFunctionsTest {
     }
 
     @Test
-    fun ifZeroArgIsWorkingFromScript() = runTest (timeout = 600000.seconds){
+    fun ifZeroArgIsWorkingFromScript() = runTest{
         val globals = createGlobals()
-        globals.loadLuaModule(
-            """
+        val result = globals.execute("""
             local testLibrary = require("testLibrary")
-            local module = {}
-            function module.call()
-              co = coroutine.create(function () return testLibrary.zeroArg() end)
-              success, result = coroutine.resume(co)
-              if success then
-                return result
-              else
-                return error(result)
-              end
-            end  
-            return module
-            """.trimIndent(),
-            "root"
-        )
-        val result = globals["root"]["call"].callSuspend()
+            return testLibrary.zeroArg()
+        """.trimIndent())
         assertEquals( "Hello World", result.tojstring())
     }
 
@@ -49,28 +36,15 @@ class WrappedSuspendedFunctionsTest {
         assertEquals( "Hello World", result.tojstring())
     }
     @Test
-    fun ifOneArgIsWorkingFromScript() = runTest (timeout = 600000.seconds){
+    fun ifOneArgIsWorkingFromScript() = runTest{
         val globals = createGlobals()
-        globals.loadLuaModule(
-            """
+        val result = globals.execute("""
             local testLibrary = require("testLibrary")
-            local module = {}
-            function module.call()
-              co = coroutine.create(function () return testLibrary.oneArg("World") end)
-              success, result = coroutine.resume(co)
-              if success then
-                return result
-              else
-                return error(result)
-              end
-            end  
-            return module
-            """.trimIndent(),
-            "root"
-        )
-        val result = globals["root"]["call"].callSuspend()
+            return testLibrary.oneArg("World")
+        """.trimIndent())
         assertEquals( "Hello World", result.tojstring())
     }
+
     @Test
     fun ifTwoArgIsWorking() = runTest {
         val globals = createGlobals()
@@ -78,26 +52,12 @@ class WrappedSuspendedFunctionsTest {
         assertEquals( "Hello World and Universe", result.tojstring())
     }
     @Test
-    fun ifTwoArgIsWorkingFromScript() = runTest (timeout = 600000.seconds){
+    fun ifTwoArgIsWorkingFromScript() = runTest{
         val globals = createGlobals()
-        globals.loadLuaModule(
-            """
+        val result = globals.execute("""
             local testLibrary = require("testLibrary")
-            local module = {}
-            function module.call()
-              co = coroutine.create(function () return testLibrary.twoArg("World","Universe") end)
-              success, result = coroutine.resume(co)
-              if success then
-                return result
-              else
-                return error(result)
-              end
-            end  
-            return module
-            """.trimIndent(),
-            "root"
-        )
-        val result = globals["root"]["call"].callSuspend()
+            return testLibrary.twoArg("World","Universe")
+        """.trimIndent())
         assertEquals( "Hello World and Universe", result.tojstring())
     }
     @Test
@@ -109,24 +69,10 @@ class WrappedSuspendedFunctionsTest {
     @Test
     fun ifThreeArgIsWorkingFromScript() = runTest (timeout = 600000.seconds){
         val globals = createGlobals()
-        globals.loadLuaModule(
-            """
+        val result = globals.execute("""
             local testLibrary = require("testLibrary")
-            local module = {}
-            function module.call()
-              co = coroutine.create(function () return testLibrary.threeArg("World","Universe","Galaxy") end)
-              success, result = coroutine.resume(co)
-              if success then
-                return result
-              else
-                return error(result)
-              end
-            end  
-            return module
-            """.trimIndent(),
-            "root"
-        )
-        val result = globals["root"]["call"].callSuspend()
+            return testLibrary.threeArg("World","Universe","Galaxy")
+        """.trimIndent())
         assertEquals( "Hello World, Universe and Galaxy", result.tojstring())
     }
     @Test
@@ -139,24 +85,10 @@ class WrappedSuspendedFunctionsTest {
     @Test
     fun ifVarArgIsWorkingFromScript() = runTest (timeout = 600000.seconds) {
         val globals = createGlobals()
-        globals.loadLuaModule(
-            """
+        val result = globals.execute("""
             local testLibrary = require("testLibrary")
-            local module = {}
-            function module.call()
-              co = coroutine.create(function () return testLibrary.varArg("World","Universe","Galaxy") end)
-              success, result = coroutine.resume(co)
-              if success then
-                return result
-              else
-                return error(result)
-              end
-            end  
-            return module
-            """.trimIndent(),
-            "root"
-        )
-        val result = globals["root"]["call"].callSuspend()
+            return testLibrary.varArg("World","Universe","Galaxy")
+        """.trimIndent())
         assertEquals("Hello World, Universe, Galaxy", result.tojstring())
     }
     companion object {

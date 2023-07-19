@@ -1,7 +1,9 @@
 package org.luaj.vm2.lib
 
 import org.luaj.vm2.Globals
+import org.luaj.vm2.LuaThread
 import org.luaj.vm2.LuaValue
+import org.luaj.vm2.Varargs
 
 fun Globals.loadLuaModule(script: String, moduleName: String) {
     val module = load(script).call()
@@ -15,6 +17,12 @@ fun Globals.loadLuaModule(script: String, moduleName: String) {
         }
     }
     this.load(registration)
+}
+
+suspend fun Globals.execute(script: String): LuaValue {
+    val loadedScript = load(script)
+    val thread = LuaThread(this,loadedScript)
+    return thread.resume(LuaValue.varargsOf(emptyArray())).arg(2)
 }
 
 fun Globals.unloadLuaModule(moduleName: String) {
