@@ -1,26 +1,33 @@
-package org.luaj.vm2
+package org.luaj.vm2.lib.common
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
+import org.luaj.test.suspendTest
+import org.luaj.vm2.Globals
 import org.luaj.vm2.LuaString.Companion.valueOf
-import org.luaj.vm2.lib.common.CommonPlatform
-import org.luaj.vm2.lib.common.LibBuilder
+import org.luaj.vm2.LuaValue
 import org.luaj.vm2.lib.execute
-import org.luaj.vm2.lib.loadLuaModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.time.Duration.Companion.seconds
 
-class WrappedSuspendedFunctionsTest {
+class SuspendedFunctionsTest {
     @Test
-    fun ifZeroArgIsWorking() = runTest {
+    fun ifZeroArgIsWorking() = suspendTest {
         val globals = createGlobals()
         val result = globals["testLibrary"]["zeroArg"].callSuspend()
         assertEquals( "Hello World", result.tojstring())
     }
 
     @Test
-    fun ifZeroArgIsWorkingFromScript() = runTest{
+    fun ifMultipleCallsAreWorking() = suspendTest {
+        val globals = createGlobals()
+        val result1 = globals["testLibrary"]["zeroArg"].callSuspend()
+        val result2 = globals["testLibrary"]["zeroArg"].callSuspend()
+        assertEquals( "Hello World", result1.tojstring())
+        assertEquals( "Hello World", result2.tojstring())
+    }
+
+    @Test
+    fun ifZeroArgIsWorkingFromScript() = suspendTest {
         val globals = createGlobals()
         val result = globals.execute("""
             local testLibrary = require("testLibrary")
@@ -30,13 +37,13 @@ class WrappedSuspendedFunctionsTest {
     }
 
     @Test
-    fun ifOneArgIsWorking() = runTest {
+    fun ifOneArgIsWorking() = suspendTest {
         val globals = createGlobals()
         val result = globals["testLibrary"]["oneArg"].callSuspend(valueOf("World"))
         assertEquals( "Hello World", result.tojstring())
     }
     @Test
-    fun ifOneArgIsWorkingFromScript() = runTest{
+    fun ifOneArgIsWorkingFromScript() = suspendTest {
         val globals = createGlobals()
         val result = globals.execute("""
             local testLibrary = require("testLibrary")
@@ -46,13 +53,13 @@ class WrappedSuspendedFunctionsTest {
     }
 
     @Test
-    fun ifTwoArgIsWorking() = runTest {
+    fun ifTwoArgIsWorking() = suspendTest {
         val globals = createGlobals()
         val result = globals["testLibrary"]["twoArg"].callSuspend(valueOf("World"), valueOf("Universe"))
         assertEquals( "Hello World and Universe", result.tojstring())
     }
     @Test
-    fun ifTwoArgIsWorkingFromScript() = runTest{
+    fun ifTwoArgIsWorkingFromScript() = suspendTest {
         val globals = createGlobals()
         val result = globals.execute("""
             local testLibrary = require("testLibrary")
@@ -61,13 +68,13 @@ class WrappedSuspendedFunctionsTest {
         assertEquals( "Hello World and Universe", result.tojstring())
     }
     @Test
-    fun ifThreeArgIsWorking() = runTest {
+    fun ifThreeArgIsWorking() = suspendTest {
         val globals = createGlobals()
         val result = globals["testLibrary"]["threeArg"].callSuspend(valueOf("World"), valueOf("Universe"), valueOf("Galaxy"))
         assertEquals( "Hello World, Universe and Galaxy", result.tojstring())
     }
     @Test
-    fun ifThreeArgIsWorkingFromScript() = runTest (timeout = 600000.seconds){
+    fun ifThreeArgIsWorkingFromScript() = suspendTest {
         val globals = createGlobals()
         val result = globals.execute("""
             local testLibrary = require("testLibrary")
@@ -76,14 +83,14 @@ class WrappedSuspendedFunctionsTest {
         assertEquals( "Hello World, Universe and Galaxy", result.tojstring())
     }
     @Test
-    fun ifVarArgIsWorking() = runTest {
+    fun ifVarArgIsWorking() = suspendTest {
         val globals = createGlobals()
         val result = globals["testLibrary"]["varArg"].callSuspend(valueOf("World"), valueOf("Universe"), valueOf("Galaxy"))
         assertEquals( "Hello World, Universe, Galaxy", result.tojstring())
     }
 
     @Test
-    fun ifVarArgIsWorkingFromScript() = runTest (timeout = 600000.seconds) {
+    fun ifVarArgIsWorkingFromScript() = suspendTest {
         val globals = createGlobals()
         val result = globals.execute("""
             local testLibrary = require("testLibrary")
@@ -91,34 +98,62 @@ class WrappedSuspendedFunctionsTest {
         """.trimIndent())
         assertEquals("Hello World, Universe, Galaxy", result.tojstring())
     }
+
+    @Test
+    fun ifErrorIsWorking() = suspendTest {
+        val globals = createGlobals()
+        try {
+            globals["testLibrary"]["error"].callSuspend()
+        } catch (e: Exception) {
+            assertEquals("Hello World", e.message)
+        }
+    }
+
+    @Test
+    fun ifErrorIsWorkingFromScript() = suspendTest {
+        val globals = createGlobals()
+        try {
+            globals.execute("""
+                local testLibrary = require("testLibrary")
+                return testLibrary.error()
+            """.trimIndent())
+        } catch (e: Exception) {
+            assertEquals("Hello World", e.message)
+        }
+    }
+
     companion object {
-        fun createGlobals(): Globals{
+        fun createGlobals(): Globals {
             val globals = CommonPlatform.standardGlobals()
             globals.load(testLibrary)
             return globals
         }
 
         private val testLibrary = LibBuilder.create("testLibrary", defaultRequire = true) {
-            addSuspendedZeroArgWrapped("zeroArg") {
+            addSuspendedZeroArg("zeroArg") {
                 delay(500)
                 LuaValue.valueOf("Hello World")
             }
-            addSuspendedOneArgWrapped("oneArg") { arg, _ ->
+            addSuspendedOneArg("oneArg") { arg, _ ->
                 delay(500)
                 LuaValue.valueOf("Hello $arg")
             }
-            addSuspendedTwoArgWrapped("twoArg") { arg1, arg2, _ ->
+            addSuspendedTwoArg("twoArg") { arg1, arg2, _ ->
                 delay(500)
                 LuaValue.valueOf("Hello $arg1 and $arg2")
             }
-            addSuspendedThreeArgWrapped("threeArg") { arg1, arg2, arg3, _ ->
+            addSuspendedThreeArg("threeArg") { arg1, arg2, arg3, _ ->
                 delay(500)
                 LuaValue.valueOf("Hello $arg1, $arg2 and $arg3")
             }
-            addSuspendedVarArgWrapped("varArg") { args, _ ->
+            addSuspendedVarArg("varArg") { args, _ ->
                 delay(500)
                 val values = (1 ..args.narg()).map { args.arg(it).tojstring() }
                 LuaValue.valueOf("Hello ${values.joinToString(", ")}")
+            }
+            addSuspendedZeroArg("error") {
+                delay(500)
+                throw RuntimeException("Hello World")
             }
         }
     }

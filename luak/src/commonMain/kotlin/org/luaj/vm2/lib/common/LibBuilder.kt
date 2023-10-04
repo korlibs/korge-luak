@@ -37,7 +37,7 @@ interface LibBuilder {
         }
     }
 
-    fun addSuspendedZeroArgWrapped(name: String, function: suspend (Globals)->LuaValue){
+    fun addSuspendedZeroArg(name: String, function: suspend (Globals)->LuaValue){
         add(name){ globals: Globals ->
             wrap(globals,object : ZeroArgFunctionSuspend() {
                 override suspend fun callSuspend(): LuaValue {
@@ -46,7 +46,7 @@ interface LibBuilder {
             })
         }
     }
-    fun addSuspendedOneArgWrapped(name: String, function: suspend (LuaValue,Globals)->LuaValue){
+    fun addSuspendedOneArg(name: String, function: suspend (LuaValue, Globals)->LuaValue){
         add(name){ globals: Globals ->
             wrap(globals,
                 object : OneArgFunctionSuspend() {
@@ -57,7 +57,7 @@ interface LibBuilder {
             )
         }
     }
-    fun addSuspendedTwoArgWrapped(name: String, function: suspend (LuaValue,LuaValue,Globals)->LuaValue){
+    fun addSuspendedTwoArg(name: String, function: suspend (LuaValue, LuaValue, Globals)->LuaValue){
         add(name){ globals: Globals ->
             wrap(globals,
                 object : TwoArgFunctionSuspend() {
@@ -68,7 +68,7 @@ interface LibBuilder {
             )
         }
     }
-    fun addSuspendedThreeArgWrapped(name: String, function: suspend (LuaValue,LuaValue,LuaValue,Globals)->LuaValue){
+    fun addSuspendedThreeArg(name: String, function: suspend (LuaValue, LuaValue, LuaValue, Globals)->LuaValue){
         add(name){ globals: Globals ->
             wrap(globals,
                 object : ThreeArgFunctionSuspend() {
@@ -79,7 +79,7 @@ interface LibBuilder {
             )
         }
     }
-    fun addSuspendedVarArgWrapped(name: String, function: suspend (Varargs,Globals)->Varargs){
+    fun addSuspendedVarArg(name: String, function: suspend (Varargs, Globals)->Varargs){
         add(name){ globals: Globals ->
             wrap(globals,
                 object : VarArgFunctionSuspend() {
@@ -146,20 +146,15 @@ interface LibBuilder {
     }
 
     private fun wrap(globals: Globals, function: LibFunction): LibFunction {
-        val wrappedFunction = globals["coroutine"]["wrap"].call(function)
-        return wrappedFunction as LibFunction
+        return Wrapper(function,globals)
     }
 
     class Wrapper(
-        private val luaThread: LuaThread
+        private val luaFunction: LuaFunction,
+        private val globals: Globals
     ): VarArgFunctionSuspend() {
-        constructor(
-            luaFunction: LuaFunction,
-            globals: Globals
-        ): this(
-            LuaThread(globals, luaFunction)
-        )
         override suspend fun invokeSuspend(args: Varargs): Varargs {
+            val luaThread = LuaThread(globals, luaFunction)
             val result = luaThread.resume(args)
             return if (result.arg1().toboolean()) {
                 result.subargs(2)
