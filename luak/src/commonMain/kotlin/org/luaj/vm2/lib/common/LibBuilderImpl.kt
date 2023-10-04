@@ -38,10 +38,11 @@ internal class LibBuilderImpl(
                 functionBuilders.forEach { functionBuilder ->
                     functionBuilder(table, globals)
                 }
+                globals["package"]["preload"][moduleName] = table
+                globals["package"]["loaded"][moduleName] = table
                 if (defaultRequire) {
                     globals[moduleName] = table
                 }
-                globals["package"]["loaded"][moduleName] = table
                 if (LuaString.s_metatable == null) {
                     val mt = tableOf(
                         arrayOf(INDEX, table)
