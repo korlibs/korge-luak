@@ -20,7 +20,7 @@ class MainLuaScene : Scene() {
     override suspend fun SContainer.sceneMain() {
         val globals = createLuaGlobals()
 
-        val textStack = uiVerticalStack(padding = 8f, adjustSize = false).xy(10, 10)
+        val textStack = uiVerticalStack(padding = 8.0, adjustSize = false).xy(10, 10)
 
         fun luaprintln(str: String) {
             println("LUA_PRINTLN: $str")
