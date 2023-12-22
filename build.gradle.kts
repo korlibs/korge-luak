@@ -1,5 +1,5 @@
-import com.android.build.gradle.internal.res.processResources
 import korlibs.korge.gradle.*
+import korlibs.modules.publishing
 
 plugins {
     alias(libs.plugins.korge)
@@ -18,15 +18,12 @@ dependencies {
     add("commonMainApi", project(":deps"))
 }
 
-kotlin {
-    jvmToolchain(17)
-}
+//kotlin {
+//    jvmToolchain(17)
+//}
 
 subprojects {
     if (this.name == "luak") {
         apply(plugin = "maven-publish")
-//        tasks.withType(JavaCompile::class.java) {
-//            options.release = 11
-//        }
     }
 }
