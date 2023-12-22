@@ -1,5 +1,4 @@
 import korlibs.korge.gradle.*
-import korlibs.modules.publishing
 
 plugins {
     alias(libs.plugins.korge)
@@ -17,10 +16,6 @@ korge {
 dependencies {
     add("commonMainApi", project(":deps"))
 }
-
-//kotlin {
-//    jvmToolchain(17)
-//}
 
 subprojects {
     if (this.name == "luak") {
