@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.res.processResources
 import korlibs.korge.gradle.*
 
 plugins {
@@ -10,7 +11,6 @@ korge {
     targetJvm()
     targetJs()
     targetIos()
-    targetAndroidDirect()
     serializationJson()
 }
 
@@ -18,8 +18,15 @@ dependencies {
     add("commonMainApi", project(":deps"))
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 subprojects {
     if (this.name == "luak") {
         apply(plugin = "maven-publish")
+//        tasks.withType(JavaCompile::class.java) {
+//            options.release = 11
+//        }
     }
 }
