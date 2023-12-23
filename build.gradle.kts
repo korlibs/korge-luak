@@ -10,7 +10,7 @@ korge {
     targetJvm()
     targetJs()
     targetIos()
-    if (System.getenv("JITPACK") != "true") {
+    if (System.getenv("JITPACK") == "true") {
         targetAndroidDirect()
     }
     serializationJson()
