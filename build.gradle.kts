@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import korlibs.korge.gradle.*
 
 plugins {
@@ -14,6 +15,12 @@ korge {
         targetAndroidDirect()
     }
     serializationJson()
+}
+
+afterEvaluate {
+    tasks.getByName<AndroidLintAnalysisTask>("lintVitalAnalyzeRelease") {
+        dependsOn(tasks.getByName("jvmProcessResources"))
+    }
 }
 
 dependencies {
