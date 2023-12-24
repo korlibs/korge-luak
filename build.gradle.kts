@@ -18,8 +18,10 @@ korge {
 }
 
 afterEvaluate {
-    tasks.getByName<AndroidLintAnalysisTask>("lintVitalAnalyzeRelease") {
-        dependsOn(tasks.getByName("jvmProcessResources"))
+    if (System.getenv("JITPACK") != "true") {
+        tasks.getByName<AndroidLintAnalysisTask>("lintVitalAnalyzeRelease") {
+            dependsOn(tasks.getByName("jvmProcessResources"))
+        }
     }
 }
 
