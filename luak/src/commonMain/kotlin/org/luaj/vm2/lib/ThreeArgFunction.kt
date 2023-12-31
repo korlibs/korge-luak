@@ -23,6 +23,18 @@ package org.luaj.vm2.lib
 
 import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
+import org.luaj.vm2.internal.runBlockingNoSuspensions
+
+abstract class ThreeArgFunctionSuspend : BaseThreeArgFunction() {
+    final override fun call(arg1: LuaValue,arg2: LuaValue,arg3: LuaValue): LuaValue =
+        runBlockingNoSuspensions { callSuspend(arg1,arg2,arg3) }
+    abstract override suspend fun callSuspend(arg1: LuaValue,arg2: LuaValue,arg3: LuaValue): LuaValue
+}
+
+abstract class ThreeArgFunction : BaseThreeArgFunction() {
+    abstract override fun call(arg1: LuaValue,arg2: LuaValue,arg3: LuaValue): LuaValue
+    final override suspend fun callSuspend(arg1: LuaValue,arg2: LuaValue,arg3: LuaValue): LuaValue = call(arg1,arg2,arg3)
+}
 
 /** Abstract base class for Java function implementations that take two arguments and
  * return one value.
@@ -54,9 +66,9 @@ import org.luaj.vm2.Varargs
  * @see VarArgFunction
  */
 /** Default constructor  */
-abstract class ThreeArgFunction : LibFunction() {
-
+abstract class BaseThreeArgFunction : LibFunction() {
     abstract override fun call(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue
+    abstract override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue, arg3: LuaValue): LuaValue
 
     override fun call(): LuaValue {
         return call(LuaValue.NIL, LuaValue.NIL, LuaValue.NIL)
@@ -73,5 +85,8 @@ abstract class ThreeArgFunction : LibFunction() {
     override fun invoke(varargs: Varargs): Varargs {
         return call(varargs.arg1(), varargs.arg(2), varargs.arg(3))
     }
-
+    override suspend fun callSuspend(): LuaValue = callSuspend(NIL,NIL,NIL)
+    override suspend fun callSuspend(arg: LuaValue): LuaValue = callSuspend(arg,NIL,NIL)
+    override suspend fun callSuspend(arg1: LuaValue, arg2: LuaValue): LuaValue = callSuspend(arg1, arg2, NIL)
+    override suspend fun invokeSuspend(args: Varargs): Varargs = callSuspend(args.arg1(), args.arg(2), args.arg(3))
 } 
